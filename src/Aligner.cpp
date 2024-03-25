@@ -2,36 +2,36 @@
 #include "skeletons/utils.h"
 
 // Internal dependencies
-#include "skeleton_fusion/Filter.h"
+#include "skeleton_fusion/Aligner.h"
 #include "skeleton_fusion/utils.h"
 
 const std::string k_bash_msg_reset{"\033[0m"};
 const std::string k_bash_msg_green{"\033[32m"};
 
-hiros::hdt::Filter::Filter() : Node("hiros_hdt_filter") { start(); }
+hiros::hdt::Aligner::Aligner() : Node("hiros_hdt_aligner") { start(); }
 
-hiros::hdt::Filter::~Filter() { stop(); }
+hiros::hdt::Aligner::~Aligner() { stop(); }
 
-void hiros::hdt::Filter::start() {
+void hiros::hdt::Aligner::start() {
   configure();
 
   RCLCPP_INFO_STREAM(get_logger(),
                      k_bash_msg_green << "Running" << k_bash_msg_reset);
 }
 
-void hiros::hdt::Filter::stop() const {
+void hiros::hdt::Aligner::stop() const {
   RCLCPP_INFO_STREAM(get_logger(),
                      k_bash_msg_green << "Stopped" << k_bash_msg_reset);
 
   rclcpp::shutdown();
 }
 
-void hiros::hdt::Filter::configure() {
+void hiros::hdt::Aligner::configure() {
   getParams();
   setupRos();
 }
 
-void hiros::hdt::Filter::getParams() {
+void hiros::hdt::Aligner::getParams() {
   getParam("kinect_marker_ids.pelvis", params_.kinect_marker_ids.pelvis);
   getParam("kinect_marker_ids.right_hip", params_.kinect_marker_ids.right_hip);
   getParam("kinect_marker_ids.left_hip", params_.kinect_marker_ids.left_hip);
@@ -46,7 +46,7 @@ void hiros::hdt::Filter::getParams() {
   getParam("publish_tfs", params_.publish_tfs);
 }
 
-void hiros::hdt::Filter::setupRos() {
+void hiros::hdt::Aligner::setupRos() {
   if (params_.publish_tfs) {
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
   }
@@ -54,17 +54,17 @@ void hiros::hdt::Filter::setupRos() {
   kinect_skel_sub_ =
       create_subscription<hiros_skeleton_msgs::msg::StampedSkeleton>(
           params_.kinect_input_topic, 10,
-          std::bind(&Filter::kinectCallback, this, std::placeholders::_1));
+          std::bind(&Aligner::kinectCallback, this, std::placeholders::_1));
   xsens_skel_sub_ =
       create_subscription<hiros_skeleton_msgs::msg::StampedSkeleton>(
           params_.xsens_input_topic, 10,
-          std::bind(&Filter::xsensCallback, this, std::placeholders::_1));
+          std::bind(&Aligner::xsensCallback, this, std::placeholders::_1));
 
   fused_skel_pub_ = create_publisher<hiros_skeleton_msgs::msg::StampedSkeleton>(
       params_.output_topic, 10);
 }
 
-geometry_msgs::msg::TransformStamped hiros::hdt::Filter::ks2tf(
+geometry_msgs::msg::TransformStamped hiros::hdt::Aligner::ks2tf(
     const std::string& name,
     const hiros::skeletons::types::KinematicState& ks) const {
   geometry_msgs::msg::TransformStamped tf{};
@@ -78,7 +78,7 @@ geometry_msgs::msg::TransformStamped hiros::hdt::Filter::ks2tf(
   return tf;
 }
 
-void hiros::hdt::Filter::publishTfs() {
+void hiros::hdt::Aligner::publishTfs() {
   if (params_.publish_tfs) {
     for (const auto& link : fused_skeleton_.links) {
       if (!skeletons::utils::isNaN(link.center.pose.position) &&
@@ -91,12 +91,12 @@ void hiros::hdt::Filter::publishTfs() {
   }
 }
 
-void hiros::hdt::Filter::publishFusedSkeleton() {
+void hiros::hdt::Aligner::publishFusedSkeleton() {
   fused_skel_pub_->publish(
       hiros::skeletons::utils::toStampedMsg(fused_skeleton_));
 }
 
-void hiros::hdt::Filter::computeRotation() {
+void hiros::hdt::Aligner::computeRotation() {
   if (params_.kinect_marker_ids.arePresentIn(kinect_skeleton_) &&
       params_.xsens_marker_ids.arePresentIn(xsens_skeleton_)) {
     // TODO: compute correct quaternion
@@ -104,7 +104,7 @@ void hiros::hdt::Filter::computeRotation() {
   }
 }
 
-void hiros::hdt::Filter::computeTranslation() {
+void hiros::hdt::Aligner::computeTranslation() {
   if (kinect_skeleton_.hasMarker(params_.kinect_marker_ids.pelvis) &&
       xsens_skeleton_.hasMarker(params_.xsens_marker_ids.pelvis)) {
     // T = [R t2-R*t1
@@ -118,7 +118,7 @@ void hiros::hdt::Filter::computeTranslation() {
   }
 }
 
-void hiros::hdt::Filter::computeTransform() {
+void hiros::hdt::Aligner::computeTransform() {
   if (kinect_skeleton_.markers.empty() || xsens_skeleton_.markers.empty()) {
     // This way, when the Kinect skeleton is not available we keep the last
     // computed transform
@@ -129,17 +129,17 @@ void hiros::hdt::Filter::computeTransform() {
   computeTranslation();
 }
 
-void hiros::hdt::Filter::alignSkeleton() {
+void hiros::hdt::Aligner::alignSkeleton() {
   fused_skeleton_ = xsens_skeleton_;
   hiros::hdt::utils::transform(fused_skeleton_, transform_);
 }
 
-void hiros::hdt::Filter::clearSkeletons() {
+void hiros::hdt::Aligner::clearSkeletons() {
   kinect_skeleton_ = {};
   xsens_skeleton_ = {};
 }
 
-void hiros::hdt::Filter::processSkeleton() {
+void hiros::hdt::Aligner::processSkeleton() {
   computeTransform();
   alignSkeleton();
   clearSkeletons();
@@ -147,7 +147,7 @@ void hiros::hdt::Filter::processSkeleton() {
   publishFusedSkeleton();
 }
 
-void hiros::hdt::Filter::kinectCallback(
+void hiros::hdt::Aligner::kinectCallback(
     const hiros_skeleton_msgs::msg::StampedSkeleton& msg) {
   if (!rclcpp::ok()) {
     stop();
@@ -157,7 +157,7 @@ void hiros::hdt::Filter::kinectCallback(
   kinect_skeleton_ = skeletons::utils::toStruct(msg);
 }
 
-void hiros::hdt::Filter::xsensCallback(
+void hiros::hdt::Aligner::xsensCallback(
     const hiros_skeleton_msgs::msg::StampedSkeleton& msg) {
   if (!rclcpp::ok()) {
     stop();

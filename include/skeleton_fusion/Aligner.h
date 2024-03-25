@@ -1,5 +1,5 @@
-#ifndef hiros_skeleton_fusion_Filter_h
-#define hiros_skeleton_fusion_Filter_h
+#ifndef hiros_skeleton_fusion_Aligner_h
+#define hiros_skeleton_fusion_Aligner_h
 
 // ROS dependencies
 #include <tf2/LinearMath/Transform.h>
@@ -18,10 +18,10 @@
 namespace hiros {
 namespace hdt {
 
-class Filter : public rclcpp::Node {
+class Aligner : public rclcpp::Node {
  public:
-  Filter();
-  ~Filter();
+  Aligner();
+  ~Aligner();
 
  private:
   struct Parameters {
