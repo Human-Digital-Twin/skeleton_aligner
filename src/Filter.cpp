@@ -1,9 +1,9 @@
-// ROS dependencies
-#include <tf2/LinearMath/Transform.h>
-
 // Custom external packages dependencies
-#include "skeleton_fusion/Filter.h"
 #include "skeletons/utils.h"
+
+// Internal dependencies
+#include "skeleton_fusion/Filter.h"
+#include "skeleton_fusion/utils.h"
 
 const std::string k_bash_msg_reset{"\033[0m"};
 const std::string k_bash_msg_green{"\033[32m"};
@@ -32,9 +32,17 @@ void hiros::hdt::Filter::configure() {
 }
 
 void hiros::hdt::Filter::getParams() {
+  getParam("kinect_marker_ids.pelvis", params_.kinect_marker_ids.pelvis);
+  getParam("kinect_marker_ids.right_hip", params_.kinect_marker_ids.right_hip);
+  getParam("kinect_marker_ids.left_hip", params_.kinect_marker_ids.left_hip);
+  getParam("xsens_marker_ids.pelvis", params_.xsens_marker_ids.pelvis);
+  getParam("xsens_marker_ids.right_hip", params_.xsens_marker_ids.right_hip);
+  getParam("xsens_marker_ids.left_hip", params_.xsens_marker_ids.left_hip);
+
   getParam("kinect_input_topic", params_.kinect_input_topic);
   getParam("xsens_input_topic", params_.xsens_input_topic);
   getParam("output_topic", params_.output_topic);
+
   getParam("publish_tfs", params_.publish_tfs);
 }
 
@@ -46,11 +54,11 @@ void hiros::hdt::Filter::setupRos() {
   kinect_skel_sub_ =
       create_subscription<hiros_skeleton_msgs::msg::StampedSkeleton>(
           params_.kinect_input_topic, 10,
-          std::bind(&Filter::kinect_callback, this, std::placeholders::_1));
+          std::bind(&Filter::kinectCallback, this, std::placeholders::_1));
   xsens_skel_sub_ =
       create_subscription<hiros_skeleton_msgs::msg::StampedSkeleton>(
           params_.xsens_input_topic, 10,
-          std::bind(&Filter::xsens_callback, this, std::placeholders::_1));
+          std::bind(&Filter::xsensCallback, this, std::placeholders::_1));
 
   fused_skel_pub_ = create_publisher<hiros_skeleton_msgs::msg::StampedSkeleton>(
       params_.output_topic, 10);
@@ -88,12 +96,58 @@ void hiros::hdt::Filter::publishFusedSkeleton() {
       hiros::skeletons::utils::toStampedMsg(fused_skeleton_));
 }
 
-void hiros::hdt::Filter::processSkeletons() {
+void hiros::hdt::Filter::computeRotation() {
+  if (params_.kinect_marker_ids.arePresentIn(kinect_skeleton_) &&
+      params_.xsens_marker_ids.arePresentIn(xsens_skeleton_)) {
+    // TODO: compute correct quaternion
+    transform_.setRotation({0, 0, 0, 1});
+  }
+}
+
+void hiros::hdt::Filter::computeTranslation() {
+  if (kinect_skeleton_.hasMarker(params_.kinect_marker_ids.pelvis) &&
+      xsens_skeleton_.hasMarker(params_.xsens_marker_ids.pelvis)) {
+    // T = [R t2-R*t1
+    //      0       1]
+    transform_.setOrigin(
+        kinect_skeleton_.getMarker(params_.kinect_marker_ids.pelvis)
+            .center.pose.position -
+        transform_.getBasis() *
+            xsens_skeleton_.getMarker(params_.xsens_marker_ids.pelvis)
+                .center.pose.position);
+  }
+}
+
+void hiros::hdt::Filter::computeTransform() {
+  if (kinect_skeleton_.markers.empty() || xsens_skeleton_.markers.empty()) {
+    // This way, when the Kinect skeleton is not available we keep the last
+    // computed transform
+    return;
+  }
+
+  computeRotation();
+  computeTranslation();
+}
+
+void hiros::hdt::Filter::alignSkeleton() {
+  fused_skeleton_ = xsens_skeleton_;
+  hiros::hdt::utils::transform(fused_skeleton_, transform_);
+}
+
+void hiros::hdt::Filter::clearSkeletons() {
+  kinect_skeleton_ = {};
+  xsens_skeleton_ = {};
+}
+
+void hiros::hdt::Filter::processSkeleton() {
+  computeTransform();
+  alignSkeleton();
+  clearSkeletons();
   publishTfs();
   publishFusedSkeleton();
 }
 
-void hiros::hdt::Filter::kinect_callback(
+void hiros::hdt::Filter::kinectCallback(
     const hiros_skeleton_msgs::msg::StampedSkeleton& msg) {
   if (!rclcpp::ok()) {
     stop();
@@ -101,11 +155,9 @@ void hiros::hdt::Filter::kinect_callback(
   }
 
   kinect_skeleton_ = skeletons::utils::toStruct(msg);
-  fused_skeleton_ = kinect_skeleton_;  // TODO: remove
-  processSkeletons();
 }
 
-void hiros::hdt::Filter::xsens_callback(
+void hiros::hdt::Filter::xsensCallback(
     const hiros_skeleton_msgs::msg::StampedSkeleton& msg) {
   if (!rclcpp::ok()) {
     stop();
@@ -113,6 +165,5 @@ void hiros::hdt::Filter::xsens_callback(
   }
 
   xsens_skeleton_ = skeletons::utils::toStruct(msg);
-  fused_skeleton_ = xsens_skeleton_;  // TODO: remove
-  processSkeletons();
+  processSkeleton();
 }

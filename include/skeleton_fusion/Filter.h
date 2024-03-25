@@ -1,7 +1,8 @@
-#ifndef skeleton_fusion_Filter_h
-#define skeleton_fusion_Filter_h
+#ifndef hiros_skeleton_fusion_Filter_h
+#define hiros_skeleton_fusion_Filter_h
 
 // ROS dependencies
+#include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/transform_broadcaster.h>
 
 #include <geometry_msgs/msg/transform_stamped.hpp>
@@ -10,6 +11,9 @@
 // Custom external packages dependencies
 #include "hiros_skeleton_msgs/msg/stamped_skeleton.hpp"
 #include "skeletons/types.h"
+
+// Internal dependencies
+#include "skeleton_fusion/utils.h"
 
 namespace hiros {
 namespace hdt {
@@ -21,6 +25,9 @@ class Filter : public rclcpp::Node {
 
  private:
   struct Parameters {
+    utils::MarkerIds kinect_marker_ids{};
+    utils::MarkerIds xsens_marker_ids{};
+
     std::string kinect_input_topic{};
     std::string xsens_input_topic{};
     std::string output_topic{};
@@ -48,10 +55,16 @@ class Filter : public rclcpp::Node {
   void publishTfs();
   void publishFusedSkeleton();
 
-  void processSkeletons();
+  void computeRotation();
+  void computeTranslation();
+  void computeTransform();
 
-  void kinect_callback(const hiros_skeleton_msgs::msg::StampedSkeleton& msg);
-  void xsens_callback(const hiros_skeleton_msgs::msg::StampedSkeleton& msg);
+  void alignSkeleton();
+  void clearSkeletons();
+  void processSkeleton();
+
+  void kinectCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& msg);
+  void xsensCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& msg);
 
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_{};
 
@@ -64,6 +77,8 @@ class Filter : public rclcpp::Node {
       fused_skel_pub_{};
 
   Parameters params_{};
+
+  tf2::Transform transform_{};
 
   hiros::skeletons::types::Skeleton kinect_skeleton_{};
   hiros::skeletons::types::Skeleton xsens_skeleton_{};
