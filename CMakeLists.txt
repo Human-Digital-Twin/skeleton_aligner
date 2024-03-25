@@ -29,7 +29,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-add_executable(${PROJECT_NAME}_node src/main.cpp src/Filter.cpp)
+add_executable(${PROJECT_NAME}_node src/main.cpp src/Filter.cpp src/utils.cpp)
 ament_target_dependencies(${PROJECT_NAME}_node rclcpp hiros_skeleton_msgs tf2 tf2_ros)
 
 set_target_properties(${PROJECT_NAME}_node
