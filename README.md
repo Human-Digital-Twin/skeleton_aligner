@@ -1,1 +1,1 @@
-# skeleton_fusion
+# skeleton_aligner
