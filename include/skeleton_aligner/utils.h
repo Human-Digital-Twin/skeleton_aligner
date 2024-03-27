@@ -1,5 +1,5 @@
-#ifndef hiros_skeleton_fusion_utils_h
-#define hiros_skeleton_fusion_utils_h
+#ifndef hiros_skeleton_aligner_utils_h
+#define hiros_skeleton_aligner_utils_h
 
 // ROS dependencies
 #include <tf2/LinearMath/Transform.h>

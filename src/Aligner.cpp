@@ -2,8 +2,8 @@
 #include "skeletons/utils.h"
 
 // Internal dependencies
-#include "skeleton_fusion/Aligner.h"
-#include "skeleton_fusion/utils.h"
+#include "skeleton_aligner/Aligner.h"
+#include "skeleton_aligner/utils.h"
 
 const std::string k_bash_msg_reset{"\033[0m"};
 const std::string k_bash_msg_green{"\033[32m"};

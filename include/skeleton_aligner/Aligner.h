@@ -1,5 +1,5 @@
-#ifndef hiros_skeleton_fusion_Aligner_h
-#define hiros_skeleton_fusion_Aligner_h
+#ifndef hiros_skeleton_aligner_Aligner_h
+#define hiros_skeleton_aligner_Aligner_h
 
 // ROS dependencies
 #include <tf2/LinearMath/Transform.h>
@@ -13,7 +13,7 @@
 #include "skeletons/types.h"
 
 // Internal dependencies
-#include "skeleton_fusion/utils.h"
+#include "skeleton_aligner/utils.h"
 
 namespace hiros {
 namespace hdt {

@@ -1,4 +1,4 @@
-#include "skeleton_fusion/Aligner.h"
+#include "skeleton_aligner/Aligner.h"
 
 int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);

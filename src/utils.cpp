@@ -2,7 +2,7 @@
 #include "skeletons/utils.h"
 
 // Internal dependencies
-#include "skeleton_fusion/utils.h"
+#include "skeleton_aligner/utils.h"
 
 std::vector<int> hiros::hdt::utils::MarkerIds::toVec() const {
   return {pelvis, right_hip, left_hip};
