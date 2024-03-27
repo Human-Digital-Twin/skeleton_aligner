@@ -60,7 +60,7 @@ void hiros::hdt::Aligner::setupRos() {
           params_.xsens_input_topic, 10,
           std::bind(&Aligner::xsensCallback, this, std::placeholders::_1));
 
-  fused_skel_pub_ = create_publisher<hiros_skeleton_msgs::msg::StampedSkeleton>(
+  aligned_skel_pub_ = create_publisher<hiros_skeleton_msgs::msg::StampedSkeleton>(
       params_.output_topic, 10);
 }
 
@@ -69,8 +69,8 @@ geometry_msgs::msg::TransformStamped hiros::hdt::Aligner::ks2tf(
     const hiros::skeletons::types::KinematicState& ks) const {
   geometry_msgs::msg::TransformStamped tf{};
 
-  tf.header.frame_id = fused_skeleton_.frame;
-  tf.header.stamp = rclcpp::Time{static_cast<long>(fused_skeleton_.time * 1e9)};
+  tf.header.frame_id = aligned_skeleton_.frame;
+  tf.header.stamp = rclcpp::Time{static_cast<long>(aligned_skeleton_.time * 1e9)};
   tf.child_frame_id = name;
   tf.transform.translation = skeletons::utils::toVector3Msg(ks.pose.position);
   tf.transform.rotation = skeletons::utils::toMsg(ks.pose.orientation);
@@ -80,20 +80,20 @@ geometry_msgs::msg::TransformStamped hiros::hdt::Aligner::ks2tf(
 
 void hiros::hdt::Aligner::publishTfs() {
   if (params_.publish_tfs) {
-    for (const auto& link : fused_skeleton_.links) {
+    for (const auto& link : aligned_skeleton_.links) {
       if (!skeletons::utils::isNaN(link.center.pose.position) &&
           !skeletons::utils::isNaN(link.center.pose.orientation)) {
         tf_broadcaster_->sendTransform(ks2tf(
-            std::to_string(fused_skeleton_.id) + "_l" + std::to_string(link.id),
+            std::to_string(aligned_skeleton_.id) + "_l" + std::to_string(link.id),
             link.center));
       }
     }
   }
 }
 
-void hiros::hdt::Aligner::publishFusedSkeleton() {
-  fused_skel_pub_->publish(
-      hiros::skeletons::utils::toStampedMsg(fused_skeleton_));
+void hiros::hdt::Aligner::publishAlignedSkeleton() {
+  aligned_skel_pub_->publish(
+      hiros::skeletons::utils::toStampedMsg(aligned_skeleton_));
 }
 
 void hiros::hdt::Aligner::computeRotation() {
@@ -130,8 +130,8 @@ void hiros::hdt::Aligner::computeTransform() {
 }
 
 void hiros::hdt::Aligner::alignSkeleton() {
-  fused_skeleton_ = xsens_skeleton_;
-  hiros::hdt::utils::transform(fused_skeleton_, transform_);
+  aligned_skeleton_ = xsens_skeleton_;
+  hiros::hdt::utils::transform(aligned_skeleton_, transform_);
 }
 
 void hiros::hdt::Aligner::clearSkeletons() {
@@ -144,7 +144,7 @@ void hiros::hdt::Aligner::processSkeleton() {
   alignSkeleton();
   clearSkeletons();
   publishTfs();
-  publishFusedSkeleton();
+  publishAlignedSkeleton();
 }
 
 void hiros::hdt::Aligner::kinectCallback(

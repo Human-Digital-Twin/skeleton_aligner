@@ -53,7 +53,7 @@ class Aligner : public rclcpp::Node {
       const hiros::skeletons::types::KinematicState& ks) const;
 
   void publishTfs();
-  void publishFusedSkeleton();
+  void publishAlignedSkeleton();
 
   void computeRotation();
   void computeTranslation();
@@ -74,7 +74,7 @@ class Aligner : public rclcpp::Node {
       xsens_skel_sub_{};
 
   rclcpp::Publisher<hiros_skeleton_msgs::msg::StampedSkeleton>::SharedPtr
-      fused_skel_pub_{};
+      aligned_skel_pub_{};
 
   Parameters params_{};
 
@@ -82,7 +82,7 @@ class Aligner : public rclcpp::Node {
 
   hiros::skeletons::types::Skeleton kinect_skeleton_{};
   hiros::skeletons::types::Skeleton xsens_skeleton_{};
-  hiros::skeletons::types::Skeleton fused_skeleton_{};
+  hiros::skeletons::types::Skeleton aligned_skeleton_{};
 };
 
 }  // namespace hdt
