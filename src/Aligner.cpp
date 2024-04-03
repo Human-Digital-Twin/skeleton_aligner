@@ -70,8 +70,9 @@ void hiros::hdt::Aligner::setupRos() {
           params_.xsens_input_topic, 10,
           std::bind(&Aligner::xsensCallback, this, std::placeholders::_1));
 
-  aligned_skel_pub_ = create_publisher<hiros_skeleton_msgs::msg::StampedSkeleton>(
-      params_.output_topic, 10);
+  aligned_skel_pub_ =
+      create_publisher<hiros_skeleton_msgs::msg::StampedSkeleton>(
+          params_.output_topic, 10);
 }
 
 geometry_msgs::msg::TransformStamped hiros::hdt::Aligner::ks2tf(
@@ -80,7 +81,8 @@ geometry_msgs::msg::TransformStamped hiros::hdt::Aligner::ks2tf(
   geometry_msgs::msg::TransformStamped tf{};
 
   tf.header.frame_id = aligned_skeleton_.frame;
-  tf.header.stamp = rclcpp::Time{static_cast<long>(aligned_skeleton_.time * 1e9)};
+  tf.header.stamp =
+      rclcpp::Time{static_cast<long>(aligned_skeleton_.time * 1e9)};
   tf.child_frame_id = name;
   tf.transform.translation = skeletons::utils::toVector3Msg(ks.pose.position);
   tf.transform.rotation = skeletons::utils::toMsg(ks.pose.orientation);
@@ -93,9 +95,10 @@ void hiros::hdt::Aligner::publishTfs() {
     for (const auto& link : aligned_skeleton_.links) {
       if (!skeletons::utils::isNaN(link.center.pose.position) &&
           !skeletons::utils::isNaN(link.center.pose.orientation)) {
-        tf_broadcaster_->sendTransform(ks2tf(
-            std::to_string(aligned_skeleton_.id) + "_l" + std::to_string(link.id),
-            link.center));
+        tf_broadcaster_->sendTransform(
+            ks2tf(std::to_string(aligned_skeleton_.id) + "_l" +
+                      std::to_string(link.id),
+                  link.center));
       }
     }
   }
