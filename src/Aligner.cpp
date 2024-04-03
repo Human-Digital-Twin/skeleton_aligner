@@ -32,18 +32,28 @@ void hiros::hdt::Aligner::configure() {
 }
 
 void hiros::hdt::Aligner::getParams() {
-  getParam("kinect_marker_ids.pelvis", params_.kinect_marker_ids.pelvis);
-  getParam("kinect_marker_ids.right_hip", params_.kinect_marker_ids.right_hip);
-  getParam("kinect_marker_ids.left_hip", params_.kinect_marker_ids.left_hip);
-  getParam("xsens_marker_ids.pelvis", params_.xsens_marker_ids.pelvis);
-  getParam("xsens_marker_ids.right_hip", params_.xsens_marker_ids.right_hip);
-  getParam("xsens_marker_ids.left_hip", params_.xsens_marker_ids.left_hip);
-
   getParam("kinect_input_topic", params_.kinect_input_topic);
   getParam("xsens_input_topic", params_.xsens_input_topic);
   getParam("output_topic", params_.output_topic);
 
   getParam("publish_tfs", params_.publish_tfs);
+
+  getMarkersConfig("translation_markers", params_.translation_marker_ids);
+  getMarkersConfig("rotation_markers", params_.rotation_marker_ids);
+}
+
+void hiros::hdt::Aligner::getMarkersConfig(
+    const std::string& t_param_name,
+    std::vector<utils::MarkerPair>& t_marker_ids) {
+  std::vector<std::string> markers{};
+  getParam(t_param_name, markers);
+
+  int kinect_id{}, xsens_id{};
+  for (const auto& marker : markers) {
+    getParam(marker + ".kinect_id", kinect_id);
+    getParam(marker + ".xsens_id", xsens_id);
+    t_marker_ids.push_back({kinect_id, xsens_id});
+  }
 }
 
 void hiros::hdt::Aligner::setupRos() {
@@ -105,16 +115,18 @@ void hiros::hdt::Aligner::computeRotation() {
 }
 
 void hiros::hdt::Aligner::computeTranslation() {
-  if (kinect_skeleton_.hasMarker(params_.kinect_marker_ids.pelvis) &&
-      xsens_skeleton_.hasMarker(params_.xsens_marker_ids.pelvis)) {
+  auto kinect_marker_ids{
+      utils::kinectMarkerIds(params_.translation_marker_ids)};
+  auto xsens_marker_ids{utils::xsensMarkerIds(params_.translation_marker_ids)};
+
+  if (utils::skeletonContains(kinect_skeleton_, kinect_marker_ids) &&
+      utils::skeletonContains(xsens_skeleton_, xsens_marker_ids)) {
     // T = [R t2-R*t1
     //      0       1]
     transform_.setOrigin(
-        kinect_skeleton_.getMarker(params_.kinect_marker_ids.pelvis)
-            .center.pose.position -
-        transform_.getBasis() *
-            xsens_skeleton_.getMarker(params_.xsens_marker_ids.pelvis)
-                .center.pose.position);
+        utils::avg(utils::extractMarkers(kinect_skeleton_, kinect_marker_ids)) -
+        transform_.getBasis() * utils::avg(utils::extractMarkers(
+                                    xsens_skeleton_, xsens_marker_ids)));
   }
 }
 

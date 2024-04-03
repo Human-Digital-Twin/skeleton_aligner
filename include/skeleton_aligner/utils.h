@@ -11,14 +11,23 @@ namespace hiros {
 namespace hdt {
 namespace utils {
 
-struct MarkerIds {
-  int pelvis{};
-  int right_hip{};
-  int left_hip{};
-
-  std::vector<int> toVec() const;
-  bool arePresentIn(const hiros::skeletons::types::Skeleton& t_skel) const;
+struct MarkerPair {
+  int kinect_id{};
+  int xsens_id{};
 };
+
+std::vector<int> kinectMarkerIds(const std::vector<MarkerPair>& t_marker_pairs);
+std::vector<int> xsensMarkerIds(const std::vector<MarkerPair>& t_marker_pairs);
+
+bool skeletonContains(const hiros::skeletons::types::Skeleton& t_skel,
+                      const std::vector<int>& t_marker_ids);
+
+std::vector<hiros::skeletons::types::Point> extractMarkers(
+    const hiros::skeletons::types::Skeleton& t_skel,
+    const std::vector<int>& t_marker_ids);
+
+hiros::skeletons::types::Point avg(
+    const std::vector<hiros::skeletons::types::Point>& t_v);
 
 bool isNaN(const tf2::Transform& t_tf);
 

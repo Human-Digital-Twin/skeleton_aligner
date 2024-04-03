@@ -3,6 +3,12 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    marker_ids_cfg = os.path.join(
+        get_package_share_directory('skeleton_aligner'),
+        'config',
+        'marker_ids.yaml'
+    )
+
     return LaunchDescription([
         Node(
             package='skeleton_aligner',
@@ -12,16 +18,11 @@ def generate_launch_description():
             output='screen',
             emulate_tty=True,
             parameters=[
-                {'kinect_marker_ids.pelvis': 0},
-                {'kinect_marker_ids.right_hip': 22},
-                {'kinect_marker_ids.left_hip': 18},
-                {'xsens_marker_ids.pelvis': 1},
-                {'xsens_marker_ids.right_hip': 16},
-                {'xsens_marker_ids.left_hip': 20},
                 {'kinect_input_topic': '/kinect/input/skeleton'},
                 {'xsens_input_topic': '/xsens/input/skeleton'},
                 {'output_topic': '/aligned/output/skeleton'},
                 {'publish_tfs': False},
+                marker_ids_cfg,
             ]
         )
     ])

@@ -1,0 +1,48 @@
+/**:
+  ros__parameters:
+    translation_markers: ['tm00']
+    tm00:
+      kinect_id: 0 # K4ABT_JOINT_PELVIS
+      xsens_id: 1 # jPelvis
+
+    rotation_markers: ['rm00', 'rm01', 'rm02', 'rm03', 'rm04', 'rm05', 'rm06',
+                       'rm07', 'rm08', 'rm09', 'rm10', 'rm11', 'rm12']
+    rm00:
+      kinect_id: 0 # K4ABT_JOINT_PELVIS
+      xsens_id: 1 # jPelvis
+    rm01:
+      kinect_id: 12 # K4ABT_JOINT_SHOULDER_RIGHT
+      xsens_id: 9 # jRightShoulder
+    rm02:
+      kinect_id: 13 # K4ABT_JOINT_ELBOW_RIGHT
+      xsens_id: 10 # jRightElbow
+    rm03:
+      kinect_id: 14 # K4ABT_JOINT_WRIST_RIGHT
+      xsens_id: 11 # jRightWrist
+    rm04:
+      kinect_id: 5 # K4ABT_JOINT_SHOULDER_LEFT
+      xsens_id: 13 # jLeftShoulder
+    rm05:
+      kinect_id: 6 # K4ABT_JOINT_ELBOW_LEFT
+      xsens_id: 14 # jLeftElbow
+    rm06:
+      kinect_id: 7 # K4ABT_JOINT_WRIST_LEFT
+      xsens_id: 15 # jLeftWrist
+    rm07:
+      kinect_id: 22 # K4ABT_JOINT_HIP_RIGHT
+      xsens_id: 16 # jRightHip
+    rm08:
+      kinect_id: 23 # K4ABT_JOINT_KNEE_RIGHT
+      xsens_id: 17 # jRightKnee
+    rm09:
+      kinect_id: 24 # K4ABT_JOINT_ANKLE_RIGHT
+      xsens_id: 18 # jRightAnkle
+    rm10:
+      kinect_id: 18 # K4ABT_JOINT_HIP_LEFT
+      xsens_id: 20 # jLeftHip
+    rm11:
+      kinect_id: 19 # K4ABT_JOINT_KNEE_LEFT
+      xsens_id: 21 # jLeftKnee
+    rm12:
+      kinect_id: 20 # K4ABT_JOINT_ANKLE_LEFT
+      xsens_id: 22 # jLeftAnkle

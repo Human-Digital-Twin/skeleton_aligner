@@ -25,8 +25,8 @@ class Aligner : public rclcpp::Node {
 
  private:
   struct Parameters {
-    utils::MarkerIds kinect_marker_ids{};
-    utils::MarkerIds xsens_marker_ids{};
+    std::vector<utils::MarkerPair> translation_marker_ids{};
+    std::vector<utils::MarkerPair> rotation_marker_ids{};
 
     std::string kinect_input_topic{};
     std::string xsens_input_topic{};
@@ -46,6 +46,8 @@ class Aligner : public rclcpp::Node {
   void configure();
 
   void getParams();
+  void getMarkersConfig(const std::string& t_param_name,
+                        std::vector<utils::MarkerPair>& t_marker_ids);
   void setupRos();
 
   geometry_msgs::msg::TransformStamped ks2tf(

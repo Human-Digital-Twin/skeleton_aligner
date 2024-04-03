@@ -1,21 +1,66 @@
+// Standard dependencies
+#include <numeric>
+
 // Custom external dependencies
 #include "skeletons/utils.h"
 
 // Internal dependencies
 #include "skeleton_aligner/utils.h"
 
-std::vector<int> hiros::hdt::utils::MarkerIds::toVec() const {
-  return {pelvis, right_hip, left_hip};
+std::vector<int> hiros::hdt::utils::kinectMarkerIds(
+    const std::vector<MarkerPair>& t_marker_pairs) {
+  std::vector<int> ids{};
+  ids.reserve(t_marker_pairs.size());
+
+  for (const auto& marker_pair : t_marker_pairs) {
+    ids.push_back(marker_pair.kinect_id);
+  }
+
+  return ids;
 }
 
-bool hiros::hdt::utils::MarkerIds::arePresentIn(
-    const hiros::skeletons::types::Skeleton& t_skel) const {
-  for (const auto& mk_id : toVec()) {
+std::vector<int> hiros::hdt::utils::xsensMarkerIds(
+    const std::vector<MarkerPair>& t_marker_pairs) {
+  std::vector<int> ids{};
+  ids.reserve(t_marker_pairs.size());
+
+  for (const auto& marker_pair : t_marker_pairs) {
+    ids.push_back(marker_pair.xsens_id);
+  }
+
+  return ids;
+}
+
+bool hiros::hdt::utils::skeletonContains(
+    const hiros::skeletons::types::Skeleton& t_skel,
+    const std::vector<int>& t_marker_ids) {
+  for (const auto& mk_id : t_marker_ids) {
     if (!t_skel.hasMarker(mk_id)) {
       return false;
     }
   }
   return true;
+}
+
+std::vector<hiros::skeletons::types::Point> hiros::hdt::utils::extractMarkers(
+    const hiros::skeletons::types::Skeleton& t_skel,
+    const std::vector<int>& t_marker_ids) {
+  std::vector<hiros::skeletons::types::Point> res{};
+
+  for (const auto& marker_id : t_marker_ids) {
+    if (t_skel.hasMarker(marker_id)) {
+      res.push_back(t_skel.getMarker(marker_id).center.pose.position);
+    }
+  }
+
+  return res;
+}
+
+hiros::skeletons::types::Point hiros::hdt::utils::avg(
+    const std::vector<hiros::skeletons::types::Point>& t_v) {
+  return std::accumulate(t_v.begin(), t_v.end(),
+                         hiros::skeletons::types::Point{0., 0., 0.}) /
+         t_v.size();
 }
 
 bool hiros::hdt::utils::isNaN(const tf2::Transform& t_tf) {
