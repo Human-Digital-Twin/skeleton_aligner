@@ -25,7 +25,7 @@ ros2 launch skeleton_aligner default.launch.py
 
 ## Example Full Pipeline
 Kinect:
-1. launch [`azure_kinect_ros_driver`]((https://github.com/microsoft/Azure_Kinect_ROS_Driver)): publish body poses as MarkerArray messages
+1. launch [`azure_kinect_ros_driver`](https://github.com/microsoft/Azure_Kinect_ROS_Driver): publish body poses as MarkerArray messages
 2. launch [`k4abt_converter`](https://github.com/HiROS-unipd/k4abt_converter): convert MarkerArray messages to SkeletonGroup messages
 3. launch [`skeleton_publisher`](https://github.com/mguidolin/skeleton_publisher): extract a single StampedSkeleton from the SkeletonGroup
 
