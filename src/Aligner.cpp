@@ -1,3 +1,9 @@
+// Eigen dependencies
+#include "eigen3/Eigen/Eigen"
+
+// ROS dependencies
+#include "tf2_eigen/tf2_eigen.hpp"
+
 // Custom external packages dependencies
 #include "skeletons/utils.h"
 
@@ -110,14 +116,74 @@ void hiros::hdt::Aligner::publishAlignedSkeleton() {
 }
 
 void hiros::hdt::Aligner::computeRotation() {
-  // TODO: compute correct quaternion
-  transform_.setRotation({0, 0, 0, 1});
+  auto kinect_marker_ids{utils::kinectMarkerIds(params_.rotation_marker_ids)};
+  auto xsens_marker_ids{utils::xsensMarkerIds(params_.rotation_marker_ids)};
+
+  if (kinect_marker_ids.size() != xsens_marker_ids.size()) {
+    std::cerr << "Error: computeRotation() dimension mismatch" << std::endl;
+    return;
+  }
+
+  if (utils::skeletonContains(kinect_skeleton_, kinect_marker_ids) &&
+      utils::skeletonContains(xsens_skeleton_, xsens_marker_ids)) {
+    Eigen::MatrixXd kinect_points{3, kinect_marker_ids.size()};
+    Eigen::MatrixXd xsens_points{3, xsens_marker_ids.size()};
+
+    unsigned int i{0};
+    for (const auto& mk_id : kinect_marker_ids) {
+      kinect_points.col(i++)
+          << kinect_skeleton_.getMarker(mk_id).center.pose.position.x(),
+          kinect_skeleton_.getMarker(mk_id).center.pose.position.y(),
+          kinect_skeleton_.getMarker(mk_id).center.pose.position.z();
+    }
+    // Replace NaNs with zeros
+    kinect_points = (!kinect_points.array().isNaN()).select(kinect_points, 0);
+
+    i = 0;
+    for (const auto& mk_id : xsens_marker_ids) {
+      xsens_points.col(i++)
+          << xsens_skeleton_.getMarker(mk_id).center.pose.position.x(),
+          xsens_skeleton_.getMarker(mk_id).center.pose.position.y(),
+          xsens_skeleton_.getMarker(mk_id).center.pose.position.z();
+    }
+    // Replace NaNs with zeros
+    xsens_points = (!xsens_points.array().isNaN()).select(xsens_points, 0);
+
+    // Center matrixes
+    Eigen::MatrixXd kinect_centered{kinect_points.colwise() -
+                                    kinect_points.rowwise().mean()};
+    Eigen::MatrixXd xsens_centered{xsens_points.colwise() -
+                                   xsens_points.rowwise().mean()};
+
+    // Compute covariance matrix H
+    Eigen::Matrix3d covariance{xsens_centered * kinect_centered.transpose()};
+
+    // Compute SVD and R
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd_cov{
+        covariance, Eigen::ComputeThinU | Eigen::ComputeThinV};
+    Eigen::Matrix3d rotation{svd_cov.matrixV() * svd_cov.matrixU().transpose()};
+
+    // Special reflecion case
+    if (rotation.determinant() < 0) {
+      rotation = svd_cov.matrixV() * Eigen::Vector3d(1., 1., -1.).asDiagonal() *
+                 svd_cov.matrixU().transpose();
+    }
+
+    // Set transform rotation
+    transform_.setRotation(hiros::skeletons::utils::toStruct(
+        tf2::toMsg(Eigen::Quaterniond(rotation))));
+  }
 }
 
 void hiros::hdt::Aligner::computeTranslation() {
   auto kinect_marker_ids{
       utils::kinectMarkerIds(params_.translation_marker_ids)};
   auto xsens_marker_ids{utils::xsensMarkerIds(params_.translation_marker_ids)};
+
+  if (kinect_marker_ids.size() != xsens_marker_ids.size()) {
+    std::cerr << "Error: computeTranslation() dimension mismatch" << std::endl;
+    return;
+  }
 
   if (utils::skeletonContains(kinect_skeleton_, kinect_marker_ids) &&
       utils::skeletonContains(xsens_skeleton_, xsens_marker_ids)) {
