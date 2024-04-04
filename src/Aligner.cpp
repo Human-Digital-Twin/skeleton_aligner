@@ -45,7 +45,7 @@ void hiros::hdt::Aligner::getParams() {
   getParam("publish_tfs", params_.publish_tfs);
 
   getParam("weight", params_.weight);
-  ptr_buffer_ = std::make_unique<TfBuffer>(params_.weight);
+  buffer_ptr_ = std::make_unique<TfBuffer>(params_.weight);
 
   getMarkersConfig("translation_markers", params_.translation_marker_ids);
   getMarkersConfig("rotation_markers", params_.rotation_marker_ids);
@@ -99,23 +99,35 @@ geometry_msgs::msg::TransformStamped hiros::hdt::Aligner::ks2tf(
   return tf;
 }
 
-void hiros::hdt::Aligner::publishTfs() {
-  if (params_.publish_tfs) {
-    for (const auto& link : aligned_skeleton_.links) {
-      if (!skeletons::utils::isNaN(link.center.pose.position) &&
-          !skeletons::utils::isNaN(link.center.pose.orientation)) {
-        tf_broadcaster_->sendTransform(
-            ks2tf(std::to_string(aligned_skeleton_.id) + "_l" +
-                      std::to_string(link.id),
-                  link.center));
-      }
-    }
+void hiros::hdt::Aligner::align() {
+  computeTransform();
+  processSkeleton();
+  clearSkeletons();
+}
+
+void hiros::hdt::Aligner::computeTransform() {
+  if (kinect_skeleton_.markers.empty() || xsens_skeleton_.markers.empty()) {
+    // This way, when the Kinect skeleton is not available we keep the last
+    // computed transform
+    return;
+  }
+
+  computeRotation();
+  computeTranslation();
+  buffer_ptr_->push_back(transform_);
+}
+
+void hiros::hdt::Aligner::processSkeleton() {
+  if (!buffer_ptr_->empty()) {
+    transformSkeleton();
+    publishTfs();
+    publishSkeleton();
   }
 }
 
-void hiros::hdt::Aligner::publishAlignedSkeleton() {
-  aligned_skel_pub_->publish(
-      hiros::skeletons::utils::toStampedMsg(aligned_skeleton_));
+void hiros::hdt::Aligner::clearSkeletons() {
+  kinect_skeleton_ = {};
+  xsens_skeleton_ = {};
 }
 
 void hiros::hdt::Aligner::computeRotation() {
@@ -199,34 +211,28 @@ void hiros::hdt::Aligner::computeTranslation() {
   }
 }
 
-void hiros::hdt::Aligner::computeTransform() {
-  if (kinect_skeleton_.markers.empty() || xsens_skeleton_.markers.empty()) {
-    // This way, when the Kinect skeleton is not available we keep the last
-    // computed transform
-    return;
-  }
-
-  computeRotation();
-  computeTranslation();
-  ptr_buffer_->push_back(transform_);
-}
-
-void hiros::hdt::Aligner::alignSkeleton() {
+void hiros::hdt::Aligner::transformSkeleton() {
   aligned_skeleton_ = xsens_skeleton_;
-  hiros::hdt::utils::transform(aligned_skeleton_, ptr_buffer_->avg());
+  hiros::hdt::utils::transform(aligned_skeleton_, buffer_ptr_->avg());
 }
 
-void hiros::hdt::Aligner::clearSkeletons() {
-  kinect_skeleton_ = {};
-  xsens_skeleton_ = {};
+void hiros::hdt::Aligner::publishTfs() {
+  if (params_.publish_tfs) {
+    for (const auto& link : aligned_skeleton_.links) {
+      if (!skeletons::utils::isNaN(link.center.pose.position) &&
+          !skeletons::utils::isNaN(link.center.pose.orientation)) {
+        tf_broadcaster_->sendTransform(
+            ks2tf(std::to_string(aligned_skeleton_.id) + "_l" +
+                      std::to_string(link.id),
+                  link.center));
+      }
+    }
+  }
 }
 
-void hiros::hdt::Aligner::processSkeleton() {
-  computeTransform();
-  alignSkeleton();
-  clearSkeletons();
-  publishTfs();
-  publishAlignedSkeleton();
+void hiros::hdt::Aligner::publishSkeleton() {
+  aligned_skel_pub_->publish(
+      hiros::skeletons::utils::toStampedMsg(aligned_skeleton_));
 }
 
 void hiros::hdt::Aligner::kinectCallback(
@@ -247,5 +253,5 @@ void hiros::hdt::Aligner::xsensCallback(
   }
 
   xsens_skeleton_ = skeletons::utils::toStruct(msg);
-  processSkeleton();
+  align();
 }

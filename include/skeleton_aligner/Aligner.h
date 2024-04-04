@@ -26,9 +26,6 @@ class Aligner : public rclcpp::Node {
 
  private:
   struct Parameters {
-    std::vector<utils::MarkerPair> translation_marker_ids{};
-    std::vector<utils::MarkerPair> rotation_marker_ids{};
-
     std::string kinect_input_topic{};
     std::string xsens_input_topic{};
     std::string output_topic{};
@@ -59,16 +56,18 @@ class Aligner : public rclcpp::Node {
       const std::string& name,
       const hiros::skeletons::types::KinematicState& ks) const;
 
-  void publishTfs();
-  void publishAlignedSkeleton();
+  void align();
+
+  void computeTransform();
+  void processSkeleton();
+  void clearSkeletons();
 
   void computeRotation();
   void computeTranslation();
-  void computeTransform();
 
-  void alignSkeleton();
-  void clearSkeletons();
-  void processSkeleton();
+  void transformSkeleton();
+  void publishTfs();
+  void publishSkeleton();
 
   void kinectCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& msg);
   void xsensCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& msg);
@@ -85,8 +84,8 @@ class Aligner : public rclcpp::Node {
 
   Parameters params_{};
 
-  tf2::Transform transform_{};
   std::unique_ptr<TfBuffer> buffer_ptr_{};
+  tf2::Transform transform_{};
 
   hiros::skeletons::types::Skeleton kinect_skeleton_{};
   hiros::skeletons::types::Skeleton xsens_skeleton_{};
