@@ -17,12 +17,15 @@ class TfBuffer {
   TfBuffer(const double& t_weight,
            const double& t_threshold = k_default_threshold);
 
- private:
+  size_t size() const { return buffer_.size(); }
   void push_back(const tf2::Transform& t_tf);
 
+  tf2::Transform avg() const;
+
+ private:
   double weight_{};
   double threshold_{};
-  unsigned int max_size_{};
+  size_t max_size_{};
   std::deque<tf2::Transform> buffer_{};
 };
 

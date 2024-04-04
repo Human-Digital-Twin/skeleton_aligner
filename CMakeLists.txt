@@ -15,6 +15,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(hiros_skeleton_msgs REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(tf2_eigen REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 if(BUILD_TESTING)
@@ -30,7 +31,7 @@ if(BUILD_TESTING)
 endif()
 
 add_executable(${PROJECT_NAME}_node src/main.cpp src/Aligner.cpp src/TfBuffer.cpp src/utils.cpp)
-ament_target_dependencies(${PROJECT_NAME}_node rclcpp hiros_skeleton_msgs tf2 tf2_ros)
+ament_target_dependencies(${PROJECT_NAME}_node rclcpp hiros_skeleton_msgs tf2 tf2_eigen tf2_ros)
 
 set_target_properties(${PROJECT_NAME}_node
   PROPERTIES OUTPUT_NAME

@@ -40,6 +40,10 @@ void transform(std::vector<hiros::skeletons::types::Link>& t_lks,
 void transform(hiros::skeletons::types::Skeleton& t_skel,
                const tf2::Transform& t_tf);
 
+tf2::Transform solveWeightedLeastSquares(
+    const std::vector<tf2::Transform>& t_As,
+    const std::vector<tf2::Transform>& t_bs, const double& t_weight = 1.);
+
 }  // namespace utils
 }  // namespace hdt
 }  // namespace hiros
