@@ -110,11 +110,8 @@ void hiros::hdt::Aligner::publishAlignedSkeleton() {
 }
 
 void hiros::hdt::Aligner::computeRotation() {
-  if (params_.kinect_marker_ids.arePresentIn(kinect_skeleton_) &&
-      params_.xsens_marker_ids.arePresentIn(xsens_skeleton_)) {
-    // TODO: compute correct quaternion
-    transform_.setRotation({0, 0, 0, 1});
-  }
+  // TODO: compute correct quaternion
+  transform_.setRotation({0, 0, 0, 1});
 }
 
 void hiros::hdt::Aligner::computeTranslation() {
