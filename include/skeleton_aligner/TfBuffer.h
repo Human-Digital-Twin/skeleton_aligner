@@ -18,6 +18,7 @@ class TfBuffer {
            const double& t_threshold = k_default_threshold);
 
   size_t size() const { return buffer_.size(); }
+  bool empty() const { return buffer_.empty(); }
   void push_back(const tf2::Transform& t_tf);
 
   tf2::Transform avg() const;
