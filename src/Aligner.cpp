@@ -44,6 +44,9 @@ void hiros::hdt::Aligner::getParams() {
 
   getParam("publish_tfs", params_.publish_tfs);
 
+  getParam("weight", params_.weight);
+  ptr_buffer_ = std::make_unique<TfBuffer>(params_.weight);
+
   getMarkersConfig("translation_markers", params_.translation_marker_ids);
   getMarkersConfig("rotation_markers", params_.rotation_marker_ids);
 }
@@ -205,11 +208,12 @@ void hiros::hdt::Aligner::computeTransform() {
 
   computeRotation();
   computeTranslation();
+  ptr_buffer_->push_back(transform_);
 }
 
 void hiros::hdt::Aligner::alignSkeleton() {
   aligned_skeleton_ = xsens_skeleton_;
-  hiros::hdt::utils::transform(aligned_skeleton_, transform_);
+  hiros::hdt::utils::transform(aligned_skeleton_, ptr_buffer_->avg());
 }
 
 void hiros::hdt::Aligner::clearSkeletons() {

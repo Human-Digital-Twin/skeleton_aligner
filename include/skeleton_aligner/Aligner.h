@@ -13,6 +13,7 @@
 #include "skeletons/types.h"
 
 // Internal dependencies
+#include "skeleton_aligner/TfBuffer.h"
 #include "skeleton_aligner/utils.h"
 
 namespace hiros {
@@ -33,6 +34,10 @@ class Aligner : public rclcpp::Node {
     std::string output_topic{};
 
     bool publish_tfs{false};
+
+    double weight{};
+    std::vector<utils::MarkerPair> translation_marker_ids{};
+    std::vector<utils::MarkerPair> rotation_marker_ids{};
   };
 
   template <typename T>
@@ -81,6 +86,7 @@ class Aligner : public rclcpp::Node {
   Parameters params_{};
 
   tf2::Transform transform_{};
+  std::unique_ptr<TfBuffer> buffer_ptr_{};
 
   hiros::skeletons::types::Skeleton kinect_skeleton_{};
   hiros::skeletons::types::Skeleton xsens_skeleton_{};
