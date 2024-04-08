@@ -48,11 +48,13 @@ void hiros::hdt::TfBuffer::push_back(const tf2::Transform& t_tf) {
              time_threshold_) {
     buffer_.pop_front();
   }
+
+  computeAvg();
 }
 
-tf2::Transform hiros::hdt::TfBuffer::avg() const {
+void hiros::hdt::TfBuffer::computeAvg() {
   if (buffer_.empty()) {
-    return {};
+    return;
   }
 
   std::vector<tf2::Transform> identities{buffer_.size()};
@@ -66,5 +68,5 @@ tf2::Transform hiros::hdt::TfBuffer::avg() const {
     tfs.push_back(stamped_tf.transform);
   }
 
-  return utils::solveWeightedLeastSquares(identities, tfs, weight_);
+  avg_ = utils::solveWeightedLeastSquares(identities, tfs, weight_);
 }

@@ -21,7 +21,7 @@ class TfBuffer {
   bool empty() const { return buffer_.empty(); }
   void push_back(const tf2::Transform& t_tf);
 
-  tf2::Transform avg() const;
+  tf2::Transform avg() const { return avg_; }
 
  private:
   constexpr static const double k_default_weight_threshold{1e-3};
@@ -34,11 +34,14 @@ class TfBuffer {
 
   typedef std::deque<StampedTransform> StampedTransformDeque;
 
+  void computeAvg();
+
   double weight_{};
   double weight_threshold_{};
   double time_threshold_{};
   size_t max_size_{};
 
+  tf2::Transform avg_{};
   StampedTransformDeque buffer_{};
 };
 
