@@ -223,3 +223,13 @@ tf2::Transform hiros::hdt::utils::solveWeightedLeastSquares(
   return tf2::Transform{hiros::skeletons::utils::toStruct(tf2::toMsg(q)),
                         hiros::skeletons::utils::toStruct(tf2::toMsg(t))};
 }
+
+tf2::Transform hiros::hdt::utils::weightedAverage(
+    const std::vector<tf2::Transform>& t_tfs, const double& t_weight) {
+  std::vector<tf2::Transform> identities{t_tfs.size()};
+  tf2::Transform identity{};
+  identity.setIdentity();
+  std::fill(identities.begin(), identities.end(), identity);
+
+  return utils::solveWeightedLeastSquares(identities, t_tfs, t_weight);
+}

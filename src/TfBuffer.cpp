@@ -57,16 +57,11 @@ void hiros::hdt::TfBuffer::computeAvg() {
     return;
   }
 
-  std::vector<tf2::Transform> identities{buffer_.size()};
-  tf2::Transform identity{};
-  identity.setIdentity();
-  std::fill(identities.begin(), identities.end(), identity);
-
   std::vector<tf2::Transform> tfs{};
   tfs.reserve(buffer_.size());
   for (const auto& stamped_tf : buffer_) {
     tfs.push_back(stamped_tf.transform);
   }
 
-  avg_ = utils::solveWeightedLeastSquares(identities, tfs, weight_);
+  avg_ = utils::weightedAverage(tfs, weight_);
 }

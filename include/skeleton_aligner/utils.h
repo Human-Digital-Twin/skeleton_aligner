@@ -43,6 +43,8 @@ void transform(hiros::skeletons::types::Skeleton& t_skel,
 tf2::Transform solveWeightedLeastSquares(
     const std::vector<tf2::Transform>& t_As,
     const std::vector<tf2::Transform>& t_bs, const double& t_weight = 1.);
+tf2::Transform weightedAverage(const std::vector<tf2::Transform>& t_tfs,
+                               const double& t_weight = 1.);
 
 }  // namespace utils
 }  // namespace hdt
