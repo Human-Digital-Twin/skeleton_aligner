@@ -31,6 +31,15 @@ hiros::skeletons::types::Point avg(
 
 bool isNaN(const tf2::Transform& t_tf);
 
+double translationDistance(const tf2::Transform& t_tf1,
+                           const tf2::Transform& t_tf2);
+double rotationDistance(const tf2::Transform& t_tf1,
+                        const tf2::Transform& t_tf2);
+double normalizedDistance(
+    const tf2::Transform& t_tf1, const tf2::Transform& t_tf2,
+    const double& t_max_translation_distance = 2. /* [m] */,
+    const double& t_max_rotation_distance = 2. * M_PI /* [rad] */);
+
 void transform(hiros::skeletons::types::KinematicState& t_ks,
                const tf2::Transform& t_tf);
 void transform(std::vector<hiros::skeletons::types::Marker>& t_mks,

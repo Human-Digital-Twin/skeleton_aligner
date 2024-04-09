@@ -88,6 +88,32 @@ void hiros::hdt::utils::transform(hiros::skeletons::types::KinematicState& t_ks,
   }
 }
 
+double hiros::hdt::utils::translationDistance(const tf2::Transform& t_tf1,
+                                              const tf2::Transform& t_tf2) {
+  return t_tf1.getOrigin().distance(t_tf2.getOrigin());
+}
+
+double hiros::hdt::utils::rotationDistance(const tf2::Transform& t_tf1,
+                                           const tf2::Transform& t_tf2) {
+  return t_tf1.getRotation().angleShortestPath(t_tf2.getRotation());
+}
+
+double hiros::hdt::utils::normalizedDistance(
+    const tf2::Transform& t_tf1, const tf2::Transform& t_tf2,
+    const double& t_max_translation_distance,
+    const double& t_max_rotation_distance) {
+  auto normalized_translation_distance{std::min(
+      std::max(0.,
+               translationDistance(t_tf1, t_tf2) / t_max_translation_distance),
+      1.)};
+  auto normalized_rotation_distance{std::min(
+      std::max(0., rotationDistance(t_tf1, t_tf2) / t_max_rotation_distance),
+      1.)};
+
+  return std::max(normalized_translation_distance,
+                  normalized_rotation_distance);
+}
+
 void hiros::hdt::utils::transform(
     std::vector<hiros::skeletons::types::Marker>& t_mks,
     const tf2::Transform& t_tf) {
