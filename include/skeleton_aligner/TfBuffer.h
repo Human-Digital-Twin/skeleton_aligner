@@ -34,7 +34,8 @@ class TfBuffer {
 
   typedef std::deque<StampedTransform> StampedTransformDeque;
 
-  void computeAvg();
+  void updateAvg();
+  tf2::Transform computeAvg(const StampedTransformDeque& buffer) const;
 
   double weight_{};
   double weight_threshold_{};

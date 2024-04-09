@@ -49,19 +49,22 @@ void hiros::hdt::TfBuffer::push_back(const tf2::Transform& t_tf) {
     buffer_.pop_front();
   }
 
-  computeAvg();
+  updateAvg();
 }
 
-void hiros::hdt::TfBuffer::computeAvg() {
-  if (buffer_.empty()) {
-    return;
+void hiros::hdt::TfBuffer::updateAvg() { avg_ = computeAvg(buffer_); }
+
+tf2::Transform hiros::hdt::TfBuffer::computeAvg(
+    const StampedTransformDeque& t_buffer) const {
+  if (t_buffer.empty()) {
+    return {};
   }
 
   std::vector<tf2::Transform> tfs{};
-  tfs.reserve(buffer_.size());
-  for (const auto& stamped_tf : buffer_) {
+  tfs.reserve(t_buffer.size());
+  for (const auto& stamped_tf : t_buffer) {
     tfs.push_back(stamped_tf.transform);
   }
 
-  avg_ = utils::weightedAverage(tfs, weight_);
+  return utils::weightedAverage(tfs, weight_);
 }
