@@ -7,15 +7,21 @@
 
 hiros::hdt::TfBuffer::TfBuffer(const double& t_weight,
                                const double& t_weight_threshold,
-                               const double& t_time_threshold)
+                               const double& t_time_threshold,
+                               const double& t_clustering_threshold)
     : weight_{t_weight},
       weight_threshold_{t_weight_threshold},
-      time_threshold_{t_time_threshold} {
+      time_threshold_{t_time_threshold},
+      clustering_threshold_{t_clustering_threshold} {
+  if (clustering_threshold_ <= 0. || clustering_threshold_ >= 1.) {
+    clustering_threshold_ = k_default_clustering_threshold;
+  }
+
   if (time_threshold_ <= 0.) {
     time_threshold_ = std::numeric_limits<double>::max();
   }
 
-  if (weight_threshold_ <= 0.) {
+  if (weight_threshold_ <= 0. || weight_threshold_ >= 1.) {
     weight_threshold_ = k_default_weight_threshold;
   }
 
@@ -34,25 +40,74 @@ void hiros::hdt::TfBuffer::push_back(const tf2::Transform& t_tf) {
     return;
   }
 
-  auto now{std::chrono::system_clock::now()};
-  buffer_.push_back({std::chrono::system_clock::now(), t_tf});
-
-  // Weight-based clean up
-  if (buffer_.size() > max_size_) {
-    buffer_.pop_front();
-  }
-
-  // Time-based clean up
-  while (buffer_.size() > max_size_ / 2. &&
-         std::chrono::duration<double>(now - buffer_.front().time).count() >
-             time_threshold_) {
-    buffer_.pop_front();
-  }
-
+  updateClusters({std::chrono::system_clock::now(), t_tf});
   updateAvg();
 }
 
-void hiros::hdt::TfBuffer::updateAvg() { avg_ = computeAvg(buffer_); }
+void hiros::hdt::TfBuffer::updateClusters(const StampedTransform& t_stf) {
+  // Create first cluster
+  if (clusters_.empty()) {
+    clusters_.push_back({t_stf});
+    return;
+  }
+
+  // Calculate distances from the clusters
+  std::vector<double> distances{};
+  distances.reserve(clusters_.size());
+  for (const auto& cluster : clusters_) {
+    distances.push_back(
+        utils::normalizedDistance(t_stf.transform, computeAvg(cluster)));
+  }
+
+  // Find the minimum distance and update clusters
+  auto min_iterator{std::min_element(distances.begin(), distances.end())};
+  auto min_distance{*min_iterator};
+  auto min_index{
+      static_cast<unsigned>(std::distance(distances.begin(), min_iterator))};
+
+  if (min_distance < clustering_threshold_) {
+    clusters_.at(min_index).push_back(t_stf);
+  } else {
+    // Create new cluster
+    clusters_.push_back({t_stf});
+  }
+
+  cleanupClusters();
+  sortClusters();
+}
+
+void hiros::hdt::TfBuffer::updateAvg() { avg_ = computeAvg(clusters_.front()); }
+
+void hiros::hdt::TfBuffer::cleanupClusters() {
+  weightBasedCleanup();
+  timeBasedCleanup();
+}
+
+void hiros::hdt::TfBuffer::weightBasedCleanup() {
+  for (auto& cluster : clusters_) {
+    while (cluster.size() > max_size_) {
+      cluster.pop_front();
+    }
+  }
+}
+
+void hiros::hdt::TfBuffer::timeBasedCleanup() {
+  auto now{std::chrono::system_clock::now()};
+  for (auto& cluster : clusters_) {
+    while (cluster.size() > max_size_ / 2. &&
+           std::chrono::duration<double>(now - cluster.front().time).count() >
+               time_threshold_) {
+      cluster.pop_front();
+    }
+  }
+}
+
+void hiros::hdt::TfBuffer::sortClusters() {
+  // This way, the buffer to use is always clusters_.front()
+  std::sort(
+      clusters_.begin(), clusters_.end(),
+      [](const auto& lhs, const auto& rhs) { return lhs.size() > rhs.size(); });
+}
 
 tf2::Transform hiros::hdt::TfBuffer::computeAvg(
     const StampedTransformDeque& t_buffer) const {
