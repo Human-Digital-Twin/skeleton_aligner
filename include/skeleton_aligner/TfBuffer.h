@@ -29,7 +29,7 @@ class TfBuffer {
 
  private:
   constexpr static const double k_default_weight_threshold{1e-3};
-  constexpr static const double k_default_time_threshold{60.};  // [s]
+  constexpr static const double k_default_time_threshold{600.};  // [s]
   constexpr static const double k_default_clustering_threshold{.5};
 
   struct StampedTransform {
@@ -53,7 +53,7 @@ class TfBuffer {
   double weight_threshold_{};
   double time_threshold_{};
   double clustering_threshold_{};
-  size_t max_size_{};
+  size_t max_cluster_size_{};
 
   tf2::Transform avg_{};
   std::vector<StampedTransformDeque> clusters_{};

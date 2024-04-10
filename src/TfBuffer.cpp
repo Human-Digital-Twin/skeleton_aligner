@@ -27,9 +27,9 @@ hiros::hdt::TfBuffer::TfBuffer(const double& t_weight,
 
   if (weight_ <= 0. || weight_ >= 1.) {
     weight_ = 1.;
-    max_size_ = std::numeric_limits<size_t>::max();
+    max_cluster_size_ = std::numeric_limits<size_t>::max();
   } else {
-    max_size_ = static_cast<size_t>(
+    max_cluster_size_ = static_cast<size_t>(
         std::round(2. * std::log(weight_threshold_) / std::log(weight_)));
   }
 }
@@ -85,7 +85,7 @@ void hiros::hdt::TfBuffer::cleanupClusters() {
 
 void hiros::hdt::TfBuffer::weightBasedCleanup() {
   for (auto& cluster : clusters_) {
-    while (cluster.size() > max_size_) {
+    while (cluster.size() > max_cluster_size_) {
       cluster.pop_front();
     }
   }
@@ -93,13 +93,15 @@ void hiros::hdt::TfBuffer::weightBasedCleanup() {
 
 void hiros::hdt::TfBuffer::timeBasedCleanup() {
   auto now{std::chrono::system_clock::now()};
-  for (auto& cluster : clusters_) {
-    while (cluster.size() > max_size_ / 2. &&
-           std::chrono::duration<double>(now - cluster.front().time).count() >
-               time_threshold_) {
-      cluster.pop_front();
-    }
-  }
+
+  // Remove clusters where the newest element is older than time_threshold_
+  clusters_.erase(std::remove_if(clusters_.begin(), clusters_.end(),
+                                 [&](const auto& cluster) {
+                                   return std::chrono::duration<double>(
+                                              now - cluster.back().time)
+                                              .count() > time_threshold_;
+                                 }),
+                  clusters_.end());
 }
 
 void hiros::hdt::TfBuffer::sortClusters() {
