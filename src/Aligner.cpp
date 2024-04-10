@@ -178,7 +178,7 @@ void hiros::hdt::Aligner::computeRotation() {
         covariance, Eigen::ComputeThinU | Eigen::ComputeThinV};
     Eigen::Matrix3d rotation{svd_cov.matrixV() * svd_cov.matrixU().transpose()};
 
-    // Special reflecion case
+    // Special reflection case
     if (rotation.determinant() < 0) {
       rotation = svd_cov.matrixV() * Eigen::Vector3d(1., 1., -1.).asDiagonal() *
                  svd_cov.matrixU().transpose();
