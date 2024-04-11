@@ -74,6 +74,7 @@ void hiros::hdt::TfBuffer::updateClusters(const StampedTransform& t_stf) {
 
   cleanupClusters();
   sortClusters();
+  mergeCloseClusters();
 }
 
 void hiros::hdt::TfBuffer::updateAvg() { avg_ = computeAvg(clusters_.front()); }
@@ -124,4 +125,34 @@ tf2::Transform hiros::hdt::TfBuffer::computeAvg(
   }
 
   return utils::weightedAverage(tfs, weight_);
+}
+
+void hiros::hdt::TfBuffer::mergeCloseClusters() {
+  if (clusters_.size() <= 1) {
+    return;
+  }
+
+  // Merge the two largest clusters if their weighted centroids are closer than
+  // clustering_threshold_
+  if (utils::normalizedDistance(computeAvg(clusters_.front()),
+                                computeAvg(clusters_.at(1))) <
+      clustering_threshold_) {
+    // Merge buffer and first cluster
+    clusters_.front().insert(clusters_.front().end(),
+                             std::make_move_iterator(clusters_.at(1).begin()),
+                             std::make_move_iterator(clusters_.at(1).end()));
+
+    // Sort the elementes in the buffer
+    std::sort(
+        clusters_.front().begin(), clusters_.front().end(),
+        [](const auto& lhs, const auto& rhs) { return lhs.time < rhs.time; });
+
+    // Resize the buffer to respect max_cluster_size_
+    if (clusters_.front().size() > max_cluster_size_) {
+      clusters_.front().resize(max_cluster_size_);
+    }
+
+    // Erase the merged cluster
+    clusters_.erase(clusters_.begin() + 1);
+  }
 }

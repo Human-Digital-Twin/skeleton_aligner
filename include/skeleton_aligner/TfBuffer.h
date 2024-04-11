@@ -46,6 +46,7 @@ class TfBuffer {
   void weightBasedCleanup();
   void timeBasedCleanup();
   void sortClusters();
+  void mergeCloseClusters();
 
   tf2::Transform computeAvg(const StampedTransformDeque& buffer) const;
 

@@ -37,7 +37,7 @@ double rotationDistance(const tf2::Transform& t_tf1,
                         const tf2::Transform& t_tf2);
 double normalizedDistance(
     const tf2::Transform& t_tf1, const tf2::Transform& t_tf2,
-    const double& t_max_translation_distance = 1. /* [m] */,
+    const double& t_max_translation_distance = 2. /* [m] */,
     const double& t_max_rotation_distance = 2. * M_PI /* [rad] */);
 
 void transform(hiros::skeletons::types::KinematicState& t_ks,
