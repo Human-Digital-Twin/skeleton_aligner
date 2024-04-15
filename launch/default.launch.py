@@ -22,8 +22,6 @@ def generate_launch_description():
             parameters=[
                 {'kinect_input_topic': '/kinect/input/skeleton'},
                 {'xsens_input_topic': '/xsens/input/skeleton'},
-                {'output_topic': '/aligned/output/skeleton'},
-                {'publish_tfs': False},
                 {'weight': 1.},
                 marker_ids_cfg,
             ]

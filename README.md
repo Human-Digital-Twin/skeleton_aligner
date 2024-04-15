@@ -12,8 +12,6 @@ Align the body poses of a person estimated using [Xsens MVN Analyze](https://www
 | -------------------- | ----------------------------------------------------------------------------- |
 | `kinect_input_topic` | Input StampedSkeleton topic published by Azure Kinect Body Tracking SDK       |
 | `xsens_input_topic`  | Input StampedSkeleton topic published by MVN Analyze                          |
-| `output_topic`       | Output StampedSkeleton topic containing the aligned skeleton                  |
-| `publish_tfs`        | Set if body poses should be published as ROS transforms                       |
 | `config/marker_ids`  | Marker IDs to use to align translation and rotation between the two skeletons |
 
 
@@ -34,4 +32,4 @@ Xsens:
 2. launch [`mvn_converter`](https://github.com/mguidolin/mvn_converter): convert LinearSegmentKinematics messages to StampedSkeleton messages
 
 Aligner:
-1. launch [`skeleton_aligner`](https://github.com/mguidolin/skeleton_aligner): align the two skeletons
+1. launch [`skeleton_aligner`](https://github.com/mguidolin/skeleton_aligner): align the two reference frames

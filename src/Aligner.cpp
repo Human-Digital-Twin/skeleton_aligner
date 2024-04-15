@@ -3,6 +3,7 @@
 
 // ROS dependencies
 #include "tf2_eigen/tf2_eigen.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 // Custom external packages dependencies
 #include "skeletons/utils.h"
@@ -40,9 +41,6 @@ void hiros::hdt::Aligner::configure() {
 void hiros::hdt::Aligner::getParams() {
   getParam("kinect_input_topic", params_.kinect_input_topic);
   getParam("xsens_input_topic", params_.xsens_input_topic);
-  getParam("output_topic", params_.output_topic);
-
-  getParam("publish_tfs", params_.publish_tfs);
 
   getParam("weight", params_.weight);
   buffer_ptr_ = std::make_unique<TfBuffer>(params_.weight);
@@ -66,9 +64,8 @@ void hiros::hdt::Aligner::getMarkersConfig(
 }
 
 void hiros::hdt::Aligner::setupRos() {
-  if (params_.publish_tfs) {
-    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
-  }
+  tf_broadcaster_ =
+      std::make_unique<tf2_ros::StaticTransformBroadcaster>(*this);
 
   kinect_skel_sub_ =
       create_subscription<hiros_skeleton_msgs::msg::StampedSkeleton>(
@@ -78,51 +75,35 @@ void hiros::hdt::Aligner::setupRos() {
       create_subscription<hiros_skeleton_msgs::msg::StampedSkeleton>(
           params_.xsens_input_topic, 10,
           std::bind(&Aligner::xsensCallback, this, std::placeholders::_1));
-
-  aligned_skel_pub_ =
-      create_publisher<hiros_skeleton_msgs::msg::StampedSkeleton>(
-          params_.output_topic, 10);
 }
 
-geometry_msgs::msg::TransformStamped hiros::hdt::Aligner::ks2tf(
-    const std::string& name,
-    const hiros::skeletons::types::KinematicState& ks) const {
-  geometry_msgs::msg::TransformStamped tf{};
-
-  tf.header.frame_id = aligned_skeleton_.frame;
-  tf.header.stamp =
-      rclcpp::Time{static_cast<long>(aligned_skeleton_.time * 1e9)};
-  tf.child_frame_id = name;
-  tf.transform.translation = skeletons::utils::toVector3Msg(ks.pose.position);
-  tf.transform.rotation = skeletons::utils::toMsg(ks.pose.orientation);
-
-  return tf;
-}
-
-void hiros::hdt::Aligner::align() {
-  computeTransform();
-  processSkeleton();
-  clearSkeletons();
-}
-
-void hiros::hdt::Aligner::computeTransform() {
+void hiros::hdt::Aligner::updateTransform() {
   if (kinect_skeleton_.markers.empty() || xsens_skeleton_.markers.empty()) {
-    // This way, when the Kinect skeleton is not available we keep the last
+    // This way, when one of the skeletons is not available we keep the last
     // computed transform
     return;
   }
 
+  computeTransform();
+  publishTransform();
+  clearSkeletons();
+}
+
+void hiros::hdt::Aligner::computeTransform() {
   computeRotation();
   computeTranslation();
   buffer_ptr_->push_back(transform_);
 }
 
-void hiros::hdt::Aligner::processSkeleton() {
-  if (!buffer_ptr_->empty()) {
-    transformSkeleton();
-    publishTfs();
-    publishSkeleton();
-  }
+void hiros::hdt::Aligner::publishTransform() {
+  geometry_msgs::msg::TransformStamped tf{};
+
+  tf.header.frame_id = kinect_frame_id_;
+  tf.header.stamp = now();
+  tf.child_frame_id = xsens_frame_id_;
+  tf.transform = tf2::toMsg(buffer_ptr_->avg());
+
+  tf_broadcaster_->sendTransform(tf);
 }
 
 void hiros::hdt::Aligner::clearSkeletons() {
@@ -211,47 +192,28 @@ void hiros::hdt::Aligner::computeTranslation() {
   }
 }
 
-void hiros::hdt::Aligner::transformSkeleton() {
-  aligned_skeleton_ = xsens_skeleton_;
-  hiros::hdt::utils::transform(aligned_skeleton_, buffer_ptr_->avg());
-}
-
-void hiros::hdt::Aligner::publishTfs() {
-  if (params_.publish_tfs) {
-    for (const auto& link : aligned_skeleton_.links) {
-      if (!skeletons::utils::isNaN(link.center.pose.position) &&
-          !skeletons::utils::isNaN(link.center.pose.orientation)) {
-        tf_broadcaster_->sendTransform(
-            ks2tf(std::to_string(aligned_skeleton_.id) + "_l" +
-                      std::to_string(link.id),
-                  link.center));
-      }
-    }
+void hiros::hdt::Aligner::callback(
+    const hiros_skeleton_msgs::msg::StampedSkeleton& t_msg,
+    std::string& t_frame_id, hiros::skeletons::types::Skeleton& t_skeleton) {
+  if (!rclcpp::ok()) {
+    stop();
+    exit(EXIT_FAILURE);
   }
-}
 
-void hiros::hdt::Aligner::publishSkeleton() {
-  aligned_skel_pub_->publish(
-      hiros::skeletons::utils::toStampedMsg(aligned_skeleton_));
+  if (t_frame_id.empty()) {
+    t_frame_id = t_msg.header.frame_id;
+  }
+  t_skeleton = skeletons::utils::toStruct(t_msg);
+
+  updateTransform();
 }
 
 void hiros::hdt::Aligner::kinectCallback(
     const hiros_skeleton_msgs::msg::StampedSkeleton& msg) {
-  if (!rclcpp::ok()) {
-    stop();
-    exit(EXIT_FAILURE);
-  }
-
-  kinect_skeleton_ = skeletons::utils::toStruct(msg);
+  callback(msg, kinect_frame_id_, kinect_skeleton_);
 }
 
 void hiros::hdt::Aligner::xsensCallback(
     const hiros_skeleton_msgs::msg::StampedSkeleton& msg) {
-  if (!rclcpp::ok()) {
-    stop();
-    exit(EXIT_FAILURE);
-  }
-
-  xsens_skeleton_ = skeletons::utils::toStruct(msg);
-  align();
+  callback(msg, xsens_frame_id_, xsens_skeleton_);
 }

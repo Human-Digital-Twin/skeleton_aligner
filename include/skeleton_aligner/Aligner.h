@@ -2,11 +2,10 @@
 #define hiros_skeleton_aligner_Aligner_h
 
 // ROS dependencies
-#include <tf2/LinearMath/Transform.h>
-#include <tf2_ros/transform_broadcaster.h>
-
-#include <geometry_msgs/msg/transform_stamped.hpp>
-#include <rclcpp/rclcpp.hpp>
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "tf2/LinearMath/Transform.h"
+#include "tf2_ros/static_transform_broadcaster.h"
 
 // Custom external packages dependencies
 #include "hiros_skeleton_msgs/msg/stamped_skeleton.hpp"
@@ -28,9 +27,6 @@ class Aligner : public rclcpp::Node {
   struct Parameters {
     std::string kinect_input_topic{};
     std::string xsens_input_topic{};
-    std::string output_topic{};
-
-    bool publish_tfs{false};
 
     double weight{};
     std::vector<utils::MarkerPair> translation_marker_ids{};
@@ -52,44 +48,38 @@ class Aligner : public rclcpp::Node {
                         std::vector<utils::MarkerPair>& t_marker_ids);
   void setupRos();
 
-  geometry_msgs::msg::TransformStamped ks2tf(
-      const std::string& name,
-      const hiros::skeletons::types::KinematicState& ks) const;
-
-  void align();
+  void updateTransform();
 
   void computeTransform();
-  void processSkeleton();
+  void publishTransform();
   void clearSkeletons();
 
   void computeRotation();
   void computeTranslation();
 
-  void transformSkeleton();
-  void publishTfs();
-  void publishSkeleton();
+  void callback(const hiros_skeleton_msgs::msg::StampedSkeleton& msg,
+                std::string& t_frame_id,
+                hiros::skeletons::types::Skeleton& t_skeleton);
+  void kinectCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& t_msg);
+  void xsensCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& t_msg);
 
-  void kinectCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& msg);
-  void xsensCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& msg);
-
-  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_{};
+  std::unique_ptr<tf2_ros::StaticTransformBroadcaster> tf_broadcaster_{};
 
   rclcpp::Subscription<hiros_skeleton_msgs::msg::StampedSkeleton>::SharedPtr
       kinect_skel_sub_{};
   rclcpp::Subscription<hiros_skeleton_msgs::msg::StampedSkeleton>::SharedPtr
       xsens_skel_sub_{};
 
-  rclcpp::Publisher<hiros_skeleton_msgs::msg::StampedSkeleton>::SharedPtr
-      aligned_skel_pub_{};
-
   Parameters params_{};
 
   std::unique_ptr<TfBuffer> buffer_ptr_{};
   tf2::Transform transform_{};
 
+  std::string kinect_frame_id_{};
+  std::string xsens_frame_id_{};
+
   hiros::skeletons::types::Skeleton kinect_skeleton_{};
   hiros::skeletons::types::Skeleton xsens_skeleton_{};
-  hiros::skeletons::types::Skeleton aligned_skeleton_{};
 };
 
 }  // namespace hdt
