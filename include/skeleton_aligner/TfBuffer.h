@@ -8,6 +8,9 @@
 // ROS dependencies
 #include <tf2/LinearMath/Transform.h>
 
+// Internal dependencies
+#include "skeleton_aligner/TfCluster.h"
+
 namespace hiros {
 namespace hdt {
 
@@ -25,22 +28,16 @@ class TfBuffer {
   bool empty() const { return clusters_.empty() || clusters_.front().empty(); }
   void push_back(const tf2::Transform& t_tf);
 
-  tf2::Transform avg() const { return avg_; }
+  tf2::Transform avg() const {
+    return clusters_.empty() ? tf2::Transform{} : clusters_.front().avg();
+  }
 
  private:
   constexpr static const double k_default_weight_threshold{1e-3};
-  constexpr static const double k_default_time_threshold{600.};  // [s]
+  constexpr static const double k_default_time_threshold{60.};  // [s]
   constexpr static const double k_default_clustering_threshold{.5};
 
-  struct StampedTransform {
-    std::chrono::time_point<std::chrono::system_clock> time{};
-    tf2::Transform transform{};
-  };
-
-  typedef std::deque<StampedTransform> StampedTransformDeque;
-
-  void updateClusters(const StampedTransform& t_stf);
-  void updateAvg();
+  void updateClusters(const tf2::Transform& t_tf);
 
   void cleanupClusters();
   void weightBasedCleanup();
@@ -48,16 +45,13 @@ class TfBuffer {
   void sortClusters();
   void mergeCloseClusters();
 
-  tf2::Transform computeAvg(const StampedTransformDeque& buffer) const;
-
   double weight_{};
   double weight_threshold_{};
   double time_threshold_{};
   double clustering_threshold_{};
   size_t max_cluster_size_{};
 
-  tf2::Transform avg_{};
-  std::vector<StampedTransformDeque> clusters_{};
+  std::vector<TfCluster> clusters_{};
 };
 
 }  // namespace hdt

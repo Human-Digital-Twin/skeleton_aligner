@@ -40,14 +40,13 @@ void hiros::hdt::TfBuffer::push_back(const tf2::Transform& t_tf) {
     return;
   }
 
-  updateClusters({std::chrono::system_clock::now(), t_tf});
-  updateAvg();
+  updateClusters(t_tf);
 }
 
-void hiros::hdt::TfBuffer::updateClusters(const StampedTransform& t_stf) {
+void hiros::hdt::TfBuffer::updateClusters(const tf2::Transform& t_tf) {
   // Create first cluster
   if (clusters_.empty()) {
-    clusters_.push_back({t_stf});
+    clusters_.push_back({weight_, t_tf});
     return;
   }
 
@@ -55,8 +54,7 @@ void hiros::hdt::TfBuffer::updateClusters(const StampedTransform& t_stf) {
   std::vector<double> distances{};
   distances.reserve(clusters_.size());
   for (const auto& cluster : clusters_) {
-    distances.push_back(
-        utils::normalizedDistance(t_stf.transform, computeAvg(cluster)));
+    distances.push_back(utils::normalizedDistance(t_tf, cluster.avg()));
   }
 
   // Find the minimum distance and update clusters
@@ -66,18 +64,16 @@ void hiros::hdt::TfBuffer::updateClusters(const StampedTransform& t_stf) {
       static_cast<unsigned>(std::distance(distances.begin(), min_iterator))};
 
   if (min_distance < clustering_threshold_) {
-    clusters_.at(min_index).push_back(t_stf);
+    clusters_.at(min_index).push_back(t_tf);
   } else {
     // Create new cluster
-    clusters_.push_back({t_stf});
+    clusters_.push_back({weight_, t_tf});
   }
 
   cleanupClusters();
   sortClusters();
   mergeCloseClusters();
 }
-
-void hiros::hdt::TfBuffer::updateAvg() { avg_ = computeAvg(clusters_.front()); }
 
 void hiros::hdt::TfBuffer::cleanupClusters() {
   weightBasedCleanup();
@@ -93,14 +89,11 @@ void hiros::hdt::TfBuffer::weightBasedCleanup() {
 }
 
 void hiros::hdt::TfBuffer::timeBasedCleanup() {
-  auto now{std::chrono::system_clock::now()};
-
   // Remove clusters where the newest element is older than time_threshold_
   clusters_.erase(std::remove_if(clusters_.begin(), clusters_.end(),
                                  [&](const auto& cluster) {
-                                   return std::chrono::duration<double>(
-                                              now - cluster.back().time)
-                                              .count() > time_threshold_;
+                                   return cluster.age().count() >
+                                          time_threshold_;
                                  }),
                   clusters_.end());
 }
@@ -112,40 +105,21 @@ void hiros::hdt::TfBuffer::sortClusters() {
       [](const auto& lhs, const auto& rhs) { return lhs.size() > rhs.size(); });
 }
 
-tf2::Transform hiros::hdt::TfBuffer::computeAvg(
-    const StampedTransformDeque& t_buffer) const {
-  if (t_buffer.empty()) {
-    return {};
-  }
-
-  std::vector<tf2::Transform> tfs{};
-  tfs.reserve(t_buffer.size());
-  for (const auto& stamped_tf : t_buffer) {
-    tfs.push_back(stamped_tf.transform);
-  }
-
-  return utils::weightedAverage(tfs, weight_);
-}
-
 void hiros::hdt::TfBuffer::mergeCloseClusters() {
   if (clusters_.size() <= 1) {
     return;
   }
 
-  // Merge the two largest clusters if their weighted centroids are closer than
-  // clustering_threshold_
-  if (utils::normalizedDistance(computeAvg(clusters_.front()),
-                                computeAvg(clusters_.at(1))) <
+  // Merge the two largest clusters if their weighted centroids are closer
+  // than clustering_threshold_
+  if (utils::normalizedDistance(clusters_.front().avg(),
+                                clusters_.at(1).avg()) <
       clustering_threshold_) {
     // Merge buffer and first cluster
-    clusters_.front().insert(clusters_.front().end(),
-                             std::make_move_iterator(clusters_.at(1).begin()),
-                             std::make_move_iterator(clusters_.at(1).end()));
+    clusters_.front().merge(clusters_.at(1));
 
     // Sort the elementes in the buffer
-    std::sort(
-        clusters_.front().begin(), clusters_.front().end(),
-        [](const auto& lhs, const auto& rhs) { return lhs.time < rhs.time; });
+    clusters_.front().sort();
 
     // Resize the buffer to respect max_cluster_size_
     if (clusters_.front().size() > max_cluster_size_) {

@@ -146,8 +146,8 @@ tf2::Transform hiros::hdt::utils::solveWeightedLeastSquares(
     return {};
   }
 
-  if (t_weight <= 0. || t_weight > 1.) {
-    std::cerr << "Error: weight out of bounds (0., 1.]" << std::endl;
+  if (t_weight <= 0.) {
+    std::cerr << "Error: negative weight" << std::endl;
     return {};
   }
 
@@ -263,6 +263,10 @@ tf2::Transform hiros::hdt::utils::weightedAverage(
 tf2::Transform hiros::hdt::utils::weightedAverage(
     const tf2::Transform& t_tf, const tf2::Transform& t_prev_avg,
     const unsigned& t_n_elems, const double& t_weight) {
+  if (t_n_elems <= 0) {
+    return t_tf;
+  }
+
   auto total_weight{0.};
   for (auto i{0u}; i < t_n_elems; ++i) {
     total_weight += std::pow(t_weight, i + 1);
