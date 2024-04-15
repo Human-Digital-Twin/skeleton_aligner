@@ -118,9 +118,6 @@ void hiros::hdt::TfBuffer::mergeCloseClusters() {
     // Merge buffer and first cluster
     clusters_.front().merge(clusters_.at(1));
 
-    // Sort the elementes in the buffer
-    clusters_.front().sort();
-
     // Resize the buffer to respect max_cluster_size_
     if (clusters_.front().size() > max_cluster_size_) {
       clusters_.front().resize(max_cluster_size_);

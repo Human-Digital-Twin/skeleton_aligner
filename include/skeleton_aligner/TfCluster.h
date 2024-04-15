@@ -24,7 +24,6 @@ class TfCluster {
   void pop_front() { cluster_.pop_front(); }
   void resize(const size_t& t_size) { cluster_.resize(t_size); }
 
-  void sort();
   void merge(const TfCluster& t_other);
 
   std::chrono::seconds age() const;
@@ -36,6 +35,7 @@ class TfCluster {
     tf2::Transform transform{};
   };
 
+  void computeFastAvg();
   void computeAvg();
 
   double weight_{1.};
