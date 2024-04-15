@@ -262,7 +262,7 @@ tf2::Transform hiros::hdt::utils::weightedAverage(
 
 tf2::Transform hiros::hdt::utils::weightedAverage(
     const tf2::Transform& t_tf, const tf2::Transform& t_prev_avg,
-    const unsigned& t_n_elems, const double& t_weight) {
+    const size_t& t_n_elems, const double& t_weight) {
   if (t_n_elems <= 0) {
     return t_tf;
   }
