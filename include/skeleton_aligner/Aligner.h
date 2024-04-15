@@ -58,7 +58,6 @@ class Aligner : public rclcpp::Node {
   void computeTranslation();
 
   void callback(const hiros_skeleton_msgs::msg::StampedSkeleton& msg,
-                std::string& t_frame_id,
                 hiros::skeletons::types::Skeleton& t_skeleton);
   void kinectCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& t_msg);
   void xsensCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& t_msg);
@@ -74,9 +73,6 @@ class Aligner : public rclcpp::Node {
 
   std::unique_ptr<TfBuffer> buffer_ptr_{};
   tf2::Transform transform_{};
-
-  std::string kinect_frame_id_{};
-  std::string xsens_frame_id_{};
 
   hiros::skeletons::types::Skeleton kinect_skeleton_{};
   hiros::skeletons::types::Skeleton xsens_skeleton_{};

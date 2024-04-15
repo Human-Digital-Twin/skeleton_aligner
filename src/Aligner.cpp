@@ -98,9 +98,9 @@ void hiros::hdt::Aligner::computeTransform() {
 void hiros::hdt::Aligner::publishTransform() {
   geometry_msgs::msg::TransformStamped tf{};
 
-  tf.header.frame_id = kinect_frame_id_;
   tf.header.stamp = now();
-  tf.child_frame_id = xsens_frame_id_;
+  tf.header.frame_id = kinect_skeleton_.frame;
+  tf.child_frame_id = xsens_skeleton_.frame;
   tf.transform = tf2::toMsg(buffer_ptr_->avg());
 
   tf_broadcaster_->sendTransform(tf);
@@ -194,26 +194,22 @@ void hiros::hdt::Aligner::computeTranslation() {
 
 void hiros::hdt::Aligner::callback(
     const hiros_skeleton_msgs::msg::StampedSkeleton& t_msg,
-    std::string& t_frame_id, hiros::skeletons::types::Skeleton& t_skeleton) {
+    hiros::skeletons::types::Skeleton& t_skeleton) {
   if (!rclcpp::ok()) {
     stop();
     exit(EXIT_FAILURE);
   }
 
-  if (t_frame_id.empty()) {
-    t_frame_id = t_msg.header.frame_id;
-  }
   t_skeleton = skeletons::utils::toStruct(t_msg);
-
   updateTransform();
 }
 
 void hiros::hdt::Aligner::kinectCallback(
     const hiros_skeleton_msgs::msg::StampedSkeleton& msg) {
-  callback(msg, kinect_frame_id_, kinect_skeleton_);
+  callback(msg, kinect_skeleton_);
 }
 
 void hiros::hdt::Aligner::xsensCallback(
     const hiros_skeleton_msgs::msg::StampedSkeleton& msg) {
-  callback(msg, xsens_frame_id_, xsens_skeleton_);
+  callback(msg, xsens_skeleton_);
 }
