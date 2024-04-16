@@ -30,6 +30,8 @@ void hiros::hdt::TfBuffer::push_back(const tf2::Transform& t_tf) {
 }
 
 void hiros::hdt::TfBuffer::updateClusters(const tf2::Transform& t_tf) {
+  timeBasedCleanup();
+
   // Create first cluster
   if (clusters_.empty()) {
     clusters_.push_back({t_tf, weight_});
@@ -56,7 +58,6 @@ void hiros::hdt::TfBuffer::updateClusters(const tf2::Transform& t_tf) {
     clusters_.push_back({t_tf, weight_});
   }
 
-  timeBasedCleanup();
   sortClusters();
   distanceBasedCleanup();
 }
