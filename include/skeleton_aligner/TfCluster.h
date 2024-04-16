@@ -13,21 +13,18 @@ namespace hdt {
 
 class TfCluster {
  public:
-  TfCluster(const double& t_weight);
-  TfCluster(const double& t_weight, const tf2::Transform& t_tf);
+  TfCluster(const double& t_weight = 1.);
+  TfCluster(const tf2::Transform& t_tf, const double& t_weight = 1.);
 
-  bool empty() const { return cluster_.empty(); }
-  size_t size() const { return cluster_.size(); }
-
+  bool empty() const { return cluster_size_ == 0; }
+  size_t size() const { return cluster_size_; }
   void push_back(const tf2::Transform& t_tf);
-  void pop_back() { cluster_.pop_back(); }
-  void pop_front() { cluster_.pop_front(); }
-  void resize(const size_t& t_size) { cluster_.resize(t_size); }
 
-  void merge(const TfCluster& t_other);
-
-  std::chrono::seconds age() const;
-  tf2::Transform avg() const { return average_; }
+  std::chrono::seconds age() const {
+    return std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now() - last_tf_.time);
+  }
+  tf2::Transform avg() const { return avg_tf_; }
 
  private:
   struct StampedTransform {
@@ -35,13 +32,14 @@ class TfCluster {
     tf2::Transform transform{};
   };
 
-  void computeFastAvg();
   void computeAvg();
 
-  double weight_{1.};
+  double weight_{};
+  double cumulative_weight_{0.};
 
-  std::deque<StampedTransform> cluster_{};
-  tf2::Transform average_{};
+  size_t cluster_size_{0};
+  StampedTransform last_tf_{};
+  tf2::Transform avg_tf_{};
 };
 
 }  // namespace hdt

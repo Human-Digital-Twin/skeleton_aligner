@@ -18,7 +18,6 @@ class TfBuffer {
  public:
   TfBuffer(
       const double& t_weight,
-      const double& t_weight_threshold = k_default_weight_threshold,
       const double& t_time_threshold = k_default_time_threshold,
       const double& t_clustering_threshold = k_default_clustering_threshold);
 
@@ -33,23 +32,18 @@ class TfBuffer {
   }
 
  private:
-  constexpr static const double k_default_weight_threshold{1e-3};
   constexpr static const double k_default_time_threshold{60.};  // [s]
   constexpr static const double k_default_clustering_threshold{.5};
 
   void updateClusters(const tf2::Transform& t_tf);
 
-  void cleanupClusters();
-  void weightBasedCleanup();
   void timeBasedCleanup();
   void sortClusters();
-  void mergeCloseClusters();
+  void distanceBasedCleanup();
 
   double weight_{};
-  double weight_threshold_{};
   double time_threshold_{};
   double clustering_threshold_{};
-  size_t max_cluster_size_{};
 
   std::vector<TfCluster> clusters_{};
 };

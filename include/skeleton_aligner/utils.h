@@ -54,10 +54,6 @@ tf2::Transform solveWeightedLeastSquares(
     const std::vector<tf2::Transform>& t_bs, const double& t_weight = 1.);
 tf2::Transform weightedAverage(const std::vector<tf2::Transform>& t_tfs,
                                const double& t_weight = 1.);
-tf2::Transform weightedAverage(const tf2::Transform& t_tf,
-                               const tf2::Transform& t_prev_avg,
-                               const size_t& t_n_elems,
-                               const double& t_weight = 1.);
 
 }  // namespace utils
 }  // namespace hdt

@@ -259,17 +259,3 @@ tf2::Transform hiros::hdt::utils::weightedAverage(
 
   return utils::solveWeightedLeastSquares(identities, t_tfs, t_weight);
 }
-
-tf2::Transform hiros::hdt::utils::weightedAverage(
-    const tf2::Transform& t_tf, const tf2::Transform& t_prev_avg,
-    const size_t& t_n_elems, const double& t_weight) {
-  if (t_n_elems <= 0) {
-    return t_tf;
-  }
-
-  auto total_weight{0.};
-  for (auto i{0u}; i < t_n_elems; ++i) {
-    total_weight += std::pow(t_weight, i + 1);
-  }
-  return weightedAverage({t_prev_avg, t_tf}, total_weight);
-}

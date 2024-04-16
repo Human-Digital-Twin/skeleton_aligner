@@ -6,11 +6,9 @@
 #include "skeleton_aligner/utils.h"
 
 hiros::hdt::TfBuffer::TfBuffer(const double& t_weight,
-                               const double& t_weight_threshold,
                                const double& t_time_threshold,
                                const double& t_clustering_threshold)
     : weight_{t_weight},
-      weight_threshold_{t_weight_threshold},
       time_threshold_{t_time_threshold},
       clustering_threshold_{t_clustering_threshold} {
   if (clustering_threshold_ <= 0. || clustering_threshold_ >= 1.) {
@@ -19,18 +17,6 @@ hiros::hdt::TfBuffer::TfBuffer(const double& t_weight,
 
   if (time_threshold_ <= 0.) {
     time_threshold_ = std::numeric_limits<double>::max();
-  }
-
-  if (weight_threshold_ <= 0. || weight_threshold_ >= 1.) {
-    weight_threshold_ = k_default_weight_threshold;
-  }
-
-  if (weight_ <= 0. || weight_ >= 1.) {
-    weight_ = 1.;
-    max_cluster_size_ = std::numeric_limits<size_t>::max();
-  } else {
-    max_cluster_size_ = static_cast<size_t>(
-        std::round(2. * std::log(weight_threshold_) / std::log(weight_)));
   }
 }
 
@@ -46,7 +32,7 @@ void hiros::hdt::TfBuffer::push_back(const tf2::Transform& t_tf) {
 void hiros::hdt::TfBuffer::updateClusters(const tf2::Transform& t_tf) {
   // Create first cluster
   if (clusters_.empty()) {
-    clusters_.push_back({weight_, t_tf});
+    clusters_.push_back({t_tf, weight_});
     return;
   }
 
@@ -67,25 +53,12 @@ void hiros::hdt::TfBuffer::updateClusters(const tf2::Transform& t_tf) {
     clusters_.at(min_index).push_back(t_tf);
   } else {
     // Create new cluster
-    clusters_.push_back({weight_, t_tf});
+    clusters_.push_back({t_tf, weight_});
   }
 
-  cleanupClusters();
-  sortClusters();
-  mergeCloseClusters();
-}
-
-void hiros::hdt::TfBuffer::cleanupClusters() {
-  weightBasedCleanup();
   timeBasedCleanup();
-}
-
-void hiros::hdt::TfBuffer::weightBasedCleanup() {
-  for (auto& cluster : clusters_) {
-    while (cluster.size() > max_cluster_size_) {
-      cluster.pop_front();
-    }
-  }
+  sortClusters();
+  distanceBasedCleanup();
 }
 
 void hiros::hdt::TfBuffer::timeBasedCleanup() {
@@ -105,25 +78,16 @@ void hiros::hdt::TfBuffer::sortClusters() {
       [](const auto& lhs, const auto& rhs) { return lhs.size() > rhs.size(); });
 }
 
-void hiros::hdt::TfBuffer::mergeCloseClusters() {
+void hiros::hdt::TfBuffer::distanceBasedCleanup() {
+  // Remove the smaller cluster where the normalized distance from the larger is
+  // lower than clustering_threshold_
   if (clusters_.size() <= 1) {
     return;
   }
 
-  // Merge the two largest clusters if their weighted centroids are closer
-  // than clustering_threshold_
   if (utils::normalizedDistance(clusters_.front().avg(),
                                 clusters_.at(1).avg()) <
       clustering_threshold_) {
-    // Merge buffer and first cluster
-    clusters_.front().merge(clusters_.at(1));
-
-    // Resize the buffer to respect max_cluster_size_
-    if (clusters_.front().size() > max_cluster_size_) {
-      clusters_.front().resize(max_cluster_size_);
-    }
-
-    // Erase the merged cluster
     clusters_.erase(clusters_.begin() + 1);
   }
 }

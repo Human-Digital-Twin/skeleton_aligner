@@ -6,52 +6,31 @@
 #include "skeleton_aligner/utils.h"
 
 hiros::hdt::TfCluster::TfCluster(const double& t_weight) : weight_{t_weight} {}
-hiros::hdt::TfCluster::TfCluster(const double& t_weight,
-                                 const tf2::Transform& t_tf)
+
+hiros::hdt::TfCluster::TfCluster(const tf2::Transform& t_tf,
+                                 const double& t_weight)
     : TfCluster(t_weight) {
   push_back(t_tf);
 }
 
 void hiros::hdt::TfCluster::push_back(const tf2::Transform& t_tf) {
-  cluster_.push_back({std::chrono::system_clock::now(), t_tf});
-  computeFastAvg();
-}
-
-void hiros::hdt::TfCluster::merge(const hiros::hdt::TfCluster& t_other) {
-  cluster_.insert(cluster_.end(),
-                  std::make_move_iterator(t_other.cluster_.begin()),
-                  std::make_move_iterator(t_other.cluster_.end()));
-  std::sort(
-      cluster_.begin(), cluster_.end(),
-      [](const auto& lhs, const auto& rhs) { return lhs.time < rhs.time; });
-
+  ++cluster_size_;
+  last_tf_ = {std::chrono::system_clock::now(), t_tf};
   computeAvg();
-}
 
-std::chrono::seconds hiros::hdt::TfCluster::age() const {
-  return std::chrono::duration_cast<std::chrono::seconds>(
-      std::chrono::system_clock::now() - cluster_.back().time);
-}
-
-void hiros::hdt::TfCluster::computeFastAvg() {
-  if (cluster_.empty()) {
-    return;
-  }
-
-  average_ = utils::weightedAverage(cluster_.back().transform, average_,
-                                    cluster_.size() - 1, weight_);
+  cumulative_weight_ += std::pow(weight_, cluster_size_);
 }
 
 void hiros::hdt::TfCluster::computeAvg() {
-  if (cluster_.empty()) {
+  if (empty()) {
     return;
   }
 
-  std::vector<tf2::Transform> tfs{};
-  tfs.reserve(cluster_.size());
-  for (const auto& tf : cluster_) {
-    tfs.push_back(tf.transform);
+  if (cluster_size_ == 1) {
+    avg_tf_ = last_tf_.transform;
+    return;
   }
 
-  average_ = utils::weightedAverage(tfs, weight_);
+  avg_tf_ =
+      utils::weightedAverage({avg_tf_, last_tf_.transform}, cumulative_weight_);
 }
