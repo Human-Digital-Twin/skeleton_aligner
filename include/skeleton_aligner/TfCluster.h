@@ -20,9 +20,10 @@ class TfCluster {
   size_t size() const { return cluster_size_; }
   void push_back(const tf2::Transform& t_tf);
 
-  std::chrono::seconds age() const {
-    return std::chrono::duration_cast<std::chrono::seconds>(
-        std::chrono::system_clock::now() - last_tf_.time);
+  double age() const {
+    return std::chrono::duration_cast<std::chrono::duration<double>>(
+               std::chrono::system_clock::now() - last_tf_.time)
+        .count();
   }
   tf2::Transform avg() const { return avg_tf_; }
 

@@ -32,7 +32,7 @@ class TfBuffer {
   }
 
  private:
-  constexpr static const double k_default_time_threshold{60.};  // [s]
+  constexpr static const double k_default_time_threshold{10.};  // [s]
   constexpr static const double k_default_clustering_threshold{.5};
 
   void updateClusters(const tf2::Transform& t_tf);
