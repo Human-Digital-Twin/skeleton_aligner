@@ -5,7 +5,9 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/LinearMath/Transform.h"
+#include "tf2_ros/buffer.h"
 #include "tf2_ros/static_transform_broadcaster.h"
+#include "tf2_ros/transform_listener.h"
 
 // Custom external packages dependencies
 #include "hiros_skeleton_msgs/msg/stamped_skeleton.hpp"
@@ -57,12 +59,18 @@ class Aligner : public rclcpp::Node {
   void computeRotation();
   void computeTranslation();
 
+  void getRootTransforms();
+  void getRootFrames();
+  std::string getRootFrame(std::string t_child_frame);
+
   void callback(const hiros_skeleton_msgs::msg::StampedSkeleton& msg,
                 hiros::skeletons::types::Skeleton& t_skeleton);
   void kinectCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& t_msg);
   void xsensCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& t_msg);
 
-  std::unique_ptr<tf2_ros::StaticTransformBroadcaster> tf_broadcaster_{};
+  std::unique_ptr<tf2_ros::Buffer> tf_buffer_{};
+  std::unique_ptr<tf2_ros::TransformListener> tf_listener_{};
+  std::unique_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_{};
 
   rclcpp::Subscription<hiros_skeleton_msgs::msg::StampedSkeleton>::SharedPtr
       kinect_skel_sub_{};
@@ -72,7 +80,10 @@ class Aligner : public rclcpp::Node {
   Parameters params_{};
 
   std::unique_ptr<TfBuffer> buffer_ptr_{};
-  tf2::Transform transform_{};
+
+  tf2::Stamped<tf2::Transform> kinect2root_tf_{{}, {}, {}};
+  tf2::Stamped<tf2::Transform> xsens2root_tf_{{}, {}, {}};
+  tf2::Stamped<tf2::Transform> xsens2kinect_tf_{{}, {}, {}};
 
   hiros::skeletons::types::Skeleton kinect_skeleton_{};
   hiros::skeletons::types::Skeleton xsens_skeleton_{};

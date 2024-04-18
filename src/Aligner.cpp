@@ -64,8 +64,10 @@ void hiros::hdt::Aligner::getMarkersConfig(
 }
 
 void hiros::hdt::Aligner::setupRos() {
-  tf_broadcaster_ =
-      std::make_unique<tf2_ros::StaticTransformBroadcaster>(*this);
+  tf_buffer_ = std::make_unique<tf2_ros::Buffer>(get_clock());
+  tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
+  static_tf_broadcaster_ =
+      std::make_unique<tf2_ros::StaticTransformBroadcaster>(this);
 
   kinect_skel_sub_ =
       create_subscription<hiros_skeleton_msgs::msg::StampedSkeleton>(
@@ -92,18 +94,21 @@ void hiros::hdt::Aligner::updateTransform() {
 void hiros::hdt::Aligner::computeTransform() {
   computeRotation();
   computeTranslation();
-  buffer_ptr_->push_back(transform_);
+  buffer_ptr_->push_back(xsens2kinect_tf_);
 }
 
 void hiros::hdt::Aligner::publishTransform() {
+  getRootTransforms();
+
   geometry_msgs::msg::TransformStamped tf{};
 
   tf.header.stamp = now();
-  tf.header.frame_id = kinect_skeleton_.frame;
-  tf.child_frame_id = xsens_skeleton_.frame;
-  tf.transform = tf2::toMsg(buffer_ptr_->avg());
+  tf.header.frame_id = kinect2root_tf_.frame_id_;
+  tf.child_frame_id = xsens2root_tf_.frame_id_;
+  tf.transform = tf2::toMsg(kinect2root_tf_ * buffer_ptr_->avg() *
+                            xsens2root_tf_.inverse());
 
-  tf_broadcaster_->sendTransform(tf);
+  static_tf_broadcaster_->sendTransform(tf);
 }
 
 void hiros::hdt::Aligner::clearSkeletons() {
@@ -166,7 +171,7 @@ void hiros::hdt::Aligner::computeRotation() {
     }
 
     // Set transform rotation
-    transform_.setRotation(hiros::skeletons::utils::toStruct(
+    xsens2kinect_tf_.setRotation(hiros::skeletons::utils::toStruct(
         tf2::toMsg(Eigen::Quaterniond(rotation))));
   }
 }
@@ -185,11 +190,54 @@ void hiros::hdt::Aligner::computeTranslation() {
       utils::skeletonContains(xsens_skeleton_, xsens_marker_ids)) {
     // T = [R t2-R*t1
     //      0       1]
-    transform_.setOrigin(
+    xsens2kinect_tf_.setOrigin(
         utils::avg(utils::extractMarkers(kinect_skeleton_, kinect_marker_ids)) -
-        transform_.getBasis() * utils::avg(utils::extractMarkers(
-                                    xsens_skeleton_, xsens_marker_ids)));
+        xsens2kinect_tf_.getBasis() * utils::avg(utils::extractMarkers(
+                                          xsens_skeleton_, xsens_marker_ids)));
   }
+}
+
+void hiros::hdt::Aligner::getRootTransforms() {
+  if (!kinect2root_tf_.frame_id_.empty() && !xsens2root_tf_.frame_id_.empty()) {
+    return;
+  }
+
+  getRootFrames();
+
+  tf2::fromMsg(
+      tf_buffer_->lookupTransform(kinect2root_tf_.frame_id_,
+                                  kinect_skeleton_.frame, tf2::TimePointZero),
+      kinect2root_tf_);
+  tf2::fromMsg(
+      tf_buffer_->lookupTransform(xsens2root_tf_.frame_id_,
+                                  xsens_skeleton_.frame, tf2::TimePointZero),
+      xsens2root_tf_);
+}
+
+void hiros::hdt::Aligner::getRootFrames() {
+  if (kinect2root_tf_.frame_id_.empty()) {
+    kinect2root_tf_.frame_id_ = getRootFrame(kinect_skeleton_.frame);
+  }
+
+  if (xsens2root_tf_.frame_id_.empty()) {
+    xsens2root_tf_.frame_id_ = getRootFrame(xsens_skeleton_.frame);
+  }
+}
+
+std::string hiros::hdt::Aligner::getRootFrame(std::string t_child_frame) {
+  std::string parent_frame{};
+
+  while (parent_frame.empty() || parent_frame != t_child_frame) {
+    if (!tf_buffer_->_getParent(t_child_frame, tf2::TimePointZero,
+                                parent_frame)) {
+      return t_child_frame;
+    }
+
+    t_child_frame = parent_frame;
+    tf_buffer_->_getParent(t_child_frame, tf2::TimePointZero, parent_frame);
+  }
+
+  return parent_frame;
 }
 
 void hiros::hdt::Aligner::callback(
