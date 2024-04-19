@@ -64,13 +64,9 @@ void hiros::hdt::TfBuffer::updateClusters(const tf2::Transform& t_tf) {
 
 void hiros::hdt::TfBuffer::timeBasedCleanup() {
   // Remove clusters where the newest element is older than time_threshold_
-  clusters_.erase(std::remove_if(clusters_.begin(), clusters_.end(),
-                                 [&](const auto& cluster) {
-                                   return cluster.age() >
-                                          time_threshold_ *
-                                              std::sqrt(cluster.size());
-                                 }),
-                  clusters_.end());
+  std::erase_if(clusters_, [&](const auto& cluster) {
+    return cluster.age() > time_threshold_ * std::sqrt(cluster.size());
+  });
 }
 
 void hiros::hdt::TfBuffer::sortClusters() {
