@@ -14,10 +14,10 @@
 #include "skeleton_aligner/utils.h"
 
 bool hiros::hdt::utils::skeletonContains(
-    const hiros::skeletons::types::Skeleton& t_skel,
-    const std::vector<long>& t_marker_ids) {
-  for (const auto& mk_id : t_marker_ids) {
-    if (!t_skel.hasMarker(mk_id)) {
+    const hiros::skeletons::types::Skeleton& skel,
+    const std::vector<long>& marker_ids) {
+  for (const auto& mk_id : marker_ids) {
+    if (!skel.hasMarker(mk_id)) {
       return false;
     }
   }
@@ -25,13 +25,13 @@ bool hiros::hdt::utils::skeletonContains(
 }
 
 std::vector<hiros::skeletons::types::Point> hiros::hdt::utils::extractMarkers(
-    const hiros::skeletons::types::Skeleton& t_skel,
-    const std::vector<long>& t_marker_ids) {
+    const hiros::skeletons::types::Skeleton& skel,
+    const std::vector<long>& marker_ids) {
   std::vector<hiros::skeletons::types::Point> res{};
 
-  for (const auto& marker_id : t_marker_ids) {
-    if (t_skel.hasMarker(marker_id)) {
-      res.push_back(t_skel.getMarker(marker_id).center.pose.position);
+  for (const auto& marker_id : marker_ids) {
+    if (skel.hasMarker(marker_id)) {
+      res.push_back(skel.getMarker(marker_id).center.pose.position);
     }
   }
 
@@ -39,124 +39,121 @@ std::vector<hiros::skeletons::types::Point> hiros::hdt::utils::extractMarkers(
 }
 
 hiros::skeletons::types::Point hiros::hdt::utils::avg(
-    const std::vector<hiros::skeletons::types::Point>& t_v) {
-  return std::accumulate(t_v.begin(), t_v.end(),
+    const std::vector<hiros::skeletons::types::Point>& v) {
+  return std::accumulate(v.begin(), v.end(),
                          hiros::skeletons::types::Point{0., 0., 0.}) /
-         t_v.size();
+         v.size();
 }
 
-bool hiros::hdt::utils::isNaN(const tf2::Transform& t_tf) {
-  return hiros::skeletons::utils::isNaN(t_tf.getOrigin()) ||
-         hiros::skeletons::utils::isNaN(t_tf.getRotation());
+bool hiros::hdt::utils::isNaN(const tf2::Transform& tf) {
+  return hiros::skeletons::utils::isNaN(tf.getOrigin()) ||
+         hiros::skeletons::utils::isNaN(tf.getRotation());
 }
 
-void hiros::hdt::utils::transform(hiros::skeletons::types::KinematicState& t_ks,
-                                  const tf2::Transform& t_tf) {
-  if (isNaN(t_tf)) {
+void hiros::hdt::utils::transform(hiros::skeletons::types::KinematicState& ks,
+                                  const tf2::Transform& tf) {
+  if (isNaN(tf)) {
     throw std::runtime_error("NaN transform");
   }
 
-  if (!hiros::skeletons::utils::isNaN(t_ks.pose.position)) {
-    t_ks.pose.position = t_tf * t_ks.pose.position;
+  if (!hiros::skeletons::utils::isNaN(ks.pose.position)) {
+    ks.pose.position = tf * ks.pose.position;
   }
-  if (!hiros::skeletons::utils::isNaN(t_ks.pose.orientation)) {
-    t_ks.pose.orientation = t_tf * t_ks.pose.orientation;
+  if (!hiros::skeletons::utils::isNaN(ks.pose.orientation)) {
+    ks.pose.orientation = tf * ks.pose.orientation;
   }
 }
 
-double hiros::hdt::utils::translationDistance(const tf2::Transform& t_tf1,
-                                              const tf2::Transform& t_tf2) {
-  return t_tf1.getOrigin().distance(t_tf2.getOrigin());
+double hiros::hdt::utils::translationDistance(const tf2::Transform& tf1,
+                                              const tf2::Transform& tf2) {
+  return tf1.getOrigin().distance(tf2.getOrigin());
 }
 
-double hiros::hdt::utils::rotationDistance(const tf2::Transform& t_tf1,
-                                           const tf2::Transform& t_tf2) {
-  return t_tf1.getRotation().angleShortestPath(t_tf2.getRotation());
+double hiros::hdt::utils::rotationDistance(const tf2::Transform& tf1,
+                                           const tf2::Transform& tf2) {
+  return tf1.getRotation().angleShortestPath(tf2.getRotation());
 }
 
 double hiros::hdt::utils::normalizedDistance(
-    const tf2::Transform& t_tf1, const tf2::Transform& t_tf2,
-    const double& t_max_translation_distance,
-    const double& t_max_rotation_distance) {
+    const tf2::Transform& tf1, const tf2::Transform& tf2,
+    const double& max_translation_distance,
+    const double& max_rotation_distance) {
   auto normalized_translation_distance{std::min(
-      std::max(0.,
-               translationDistance(t_tf1, t_tf2) / t_max_translation_distance),
+      std::max(0., translationDistance(tf1, tf2) / max_translation_distance),
       1.)};
   auto normalized_rotation_distance{std::min(
-      std::max(0., rotationDistance(t_tf1, t_tf2) / t_max_rotation_distance),
-      1.)};
+      std::max(0., rotationDistance(tf1, tf2) / max_rotation_distance), 1.)};
 
   return std::max(normalized_translation_distance,
                   normalized_rotation_distance);
 }
 
 void hiros::hdt::utils::transform(
-    std::vector<hiros::skeletons::types::Marker>& t_mks,
-    const tf2::Transform& t_tf) {
-  for (auto& mk : t_mks) {
-    transform(mk.center, t_tf);
+    std::vector<hiros::skeletons::types::Marker>& mks,
+    const tf2::Transform& tf) {
+  for (auto& mk : mks) {
+    transform(mk.center, tf);
   }
 }
 
 void hiros::hdt::utils::transform(
-    std::vector<hiros::skeletons::types::Link>& t_lks,
-    const tf2::Transform& t_tf) {
-  for (auto& lk : t_lks) {
-    transform(lk.center, t_tf);
+    std::vector<hiros::skeletons::types::Link>& lks, const tf2::Transform& tf) {
+  for (auto& lk : lks) {
+    transform(lk.center, tf);
   }
 }
 
-void hiros::hdt::utils::transform(hiros::skeletons::types::Skeleton& t_skel,
-                                  const tf2::Transform& t_tf) {
-  transform(t_skel.markers, t_tf);
-  transform(t_skel.links, t_tf);
-  t_skel.bounding_box = hiros::skeletons::utils::computeBoundingBox(t_skel);
+void hiros::hdt::utils::transform(hiros::skeletons::types::Skeleton& skel,
+                                  const tf2::Transform& tf) {
+  transform(skel.markers, tf);
+  transform(skel.links, tf);
+  skel.bounding_box = hiros::skeletons::utils::computeBoundingBox(skel);
 }
 
 tf2::Transform hiros::hdt::utils::solveWeightedLeastSquares(
-    const std::vector<tf2::Transform>& t_As,
-    const std::vector<tf2::Transform>& t_bs, const double& t_weight) {
-  if (t_As.size() != t_bs.size() || t_As.empty()) {
+    const std::vector<tf2::Transform>& As,
+    const std::vector<tf2::Transform>& bs, const double& weight) {
+  if (As.size() != bs.size() || As.empty()) {
     std::cerr << "Error: least squares dimension mismatch or empty vectors"
               << std::endl;
     return {};
   }
 
-  if (t_weight <= 0.) {
+  if (weight <= 0.) {
     std::cerr << "Error: negative weight" << std::endl;
     return {};
   }
 
   Eigen::MatrixXd A{};
   Eigen::MatrixXd b{};
-  A.resize(12 * static_cast<long>(t_As.size()), 12);
-  b.resize(12 * static_cast<long>(t_bs.size()), 1);
+  A.resize(12 * static_cast<long>(As.size()), 12);
+  b.resize(12 * static_cast<long>(bs.size()), 1);
 
   Eigen::Matrix4d A_tmp{};
   Eigen::Matrix4d b_tmp{};
   double w{};
   auto row{-1};
 
-  for (auto i{0ul}; i < t_As.size(); ++i) {
-    w = std::pow(t_weight, .5 * (t_As.size() - i));  // w = sqrt(W)
+  for (auto i{0ul}; i < As.size(); ++i) {
+    w = std::pow(weight, .5 * (As.size() - i));  // w = sqrt(W)
 
     A_tmp << Eigen::Quaterniond(
-                 t_As.at(i).getRotation().w(), t_As.at(i).getRotation().x(),
-                 t_As.at(i).getRotation().y(), t_As.at(i).getRotation().z())
+                 As.at(i).getRotation().w(), As.at(i).getRotation().x(),
+                 As.at(i).getRotation().y(), As.at(i).getRotation().z())
                  .normalized()
                  .toRotationMatrix(),
-        Eigen::Vector3d(t_As.at(i).getOrigin().x(), t_As.at(i).getOrigin().y(),
-                        t_As.at(i).getOrigin().z()),
+        Eigen::Vector3d(As.at(i).getOrigin().x(), As.at(i).getOrigin().y(),
+                        As.at(i).getOrigin().z()),
         0, 0, 0, 1;
     A_tmp *= w;
 
     b_tmp << Eigen::Quaterniond(
-                 t_bs.at(i).getRotation().w(), t_bs.at(i).getRotation().x(),
-                 t_bs.at(i).getRotation().y(), t_bs.at(i).getRotation().z())
+                 bs.at(i).getRotation().w(), bs.at(i).getRotation().x(),
+                 bs.at(i).getRotation().y(), bs.at(i).getRotation().z())
                  .normalized()
                  .toRotationMatrix(),
-        Eigen::Vector3d(t_bs.at(i).getOrigin().x(), t_bs.at(i).getOrigin().y(),
-                        t_bs.at(i).getOrigin().z()),
+        Eigen::Vector3d(bs.at(i).getOrigin().x(), bs.at(i).getOrigin().y(),
+                        bs.at(i).getOrigin().z()),
         0, 0, 0, 1;
     b_tmp *= w;
 
@@ -227,11 +224,11 @@ tf2::Transform hiros::hdt::utils::solveWeightedLeastSquares(
 }
 
 tf2::Transform hiros::hdt::utils::weightedAverage(
-    const std::vector<tf2::Transform>& t_tfs, const double& t_weight) {
-  std::vector<tf2::Transform> identities{t_tfs.size()};
+    const std::vector<tf2::Transform>& tfs, const double& weight) {
+  std::vector<tf2::Transform> identities{tfs.size()};
   tf2::Transform identity{};
   identity.setIdentity();
   std::fill(identities.begin(), identities.end(), identity);
 
-  return utils::solveWeightedLeastSquares(identities, t_tfs, t_weight);
+  return utils::solveWeightedLeastSquares(identities, tfs, weight);
 }

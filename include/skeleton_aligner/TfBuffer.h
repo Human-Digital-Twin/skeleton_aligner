@@ -16,16 +16,15 @@ namespace hdt {
 
 class TfBuffer {
  public:
-  TfBuffer(
-      const double& t_weight,
-      const double& t_time_threshold = k_default_time_threshold,
-      const double& t_clustering_threshold = k_default_clustering_threshold);
+  TfBuffer(const double& weight,
+           const double& time_threshold = k_default_time_threshold,
+           const double& clustering_threshold = k_default_clustering_threshold);
 
   size_t size() const {
     return clusters_.empty() ? 0. : clusters_.front().size();
   }
   bool empty() const { return clusters_.empty() || clusters_.front().empty(); }
-  void push_back(const tf2::Transform& t_tf);
+  void push_back(const tf2::Transform& tf);
 
   tf2::Transform avg() const {
     return clusters_.empty() ? tf2::Transform{} : clusters_.front().avg();
@@ -35,7 +34,7 @@ class TfBuffer {
   constexpr static const double k_default_time_threshold{10.};  // [s]
   constexpr static const double k_default_clustering_threshold{.5};
 
-  void updateClusters(const tf2::Transform& t_tf);
+  void updateClusters(const tf2::Transform& tf);
 
   void timeBasedCleanup();
   void sortClusters();

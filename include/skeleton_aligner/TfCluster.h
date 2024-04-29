@@ -10,8 +10,8 @@ namespace hdt {
 
 class TfCluster {
  public:
-  TfCluster(const double& t_weight = 1.);
-  TfCluster(const tf2::Transform& t_tf, const double& t_weight = 1.);
+  TfCluster(const double& weight = 1.);
+  TfCluster(const tf2::Transform& tf, const double& weight = 1.);
 
   bool empty() const { return cluster_size_ == 0; }
   size_t size() const { return cluster_size_; }
