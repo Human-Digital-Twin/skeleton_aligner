@@ -1,6 +1,9 @@
 #ifndef hiros_skeleton_aligner_utils_h
 #define hiros_skeleton_aligner_utils_h
 
+// Standard dependencies
+#include <map>
+
 // ROS dependencies
 #include <tf2/LinearMath/Transform.h>
 
@@ -11,20 +14,18 @@ namespace hiros {
 namespace hdt {
 namespace utils {
 
-struct MarkerPair {
-  int kinect_id{};
-  int xsens_id{};
+struct MarkersMap {
+  // map<input_topic, vector<ID>>
+  std::map<std::string, std::vector<long>> translation{};
+  std::map<std::string, std::vector<long>> rotation{};
 };
 
-std::vector<int> kinectMarkerIds(const std::vector<MarkerPair>& t_marker_pairs);
-std::vector<int> xsensMarkerIds(const std::vector<MarkerPair>& t_marker_pairs);
-
 bool skeletonContains(const hiros::skeletons::types::Skeleton& t_skel,
-                      const std::vector<int>& t_marker_ids);
+                      const std::vector<long>& t_marker_ids);
 
 std::vector<hiros::skeletons::types::Point> extractMarkers(
     const hiros::skeletons::types::Skeleton& t_skel,
-    const std::vector<int>& t_marker_ids);
+    const std::vector<long>& t_marker_ids);
 
 hiros::skeletons::types::Point avg(
     const std::vector<hiros::skeletons::types::Point>& t_v);

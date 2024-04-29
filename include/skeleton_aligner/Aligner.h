@@ -27,12 +27,9 @@ class Aligner : public rclcpp::Node {
 
  private:
   struct Parameters {
-    std::string kinect_input_topic{};
-    std::string xsens_input_topic{};
-
+    std::vector<std::string> input_topics{};
     double weight{};
-    std::vector<utils::MarkerPair> translation_marker_ids{};
-    std::vector<utils::MarkerPair> rotation_marker_ids{};
+    utils::MarkersMap marker_ids{};
   };
 
   template <typename T>
@@ -46,8 +43,7 @@ class Aligner : public rclcpp::Node {
   void configure();
 
   void getParams();
-  void getMarkersConfig(const std::string& t_param_name,
-                        std::vector<utils::MarkerPair>& t_marker_ids);
+  void getMarkersConfig();
   void setupRos();
 
   void updateTransform();
@@ -61,32 +57,29 @@ class Aligner : public rclcpp::Node {
 
   void getRootTransforms();
   void getRootFrames();
-  std::string getRootFrame(std::string t_child_frame);
+  std::string getRootFrame(std::string child_frame);
 
   void callback(const hiros_skeleton_msgs::msg::StampedSkeleton& msg,
-                hiros::skeletons::types::Skeleton& t_skeleton);
-  void kinectCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& t_msg);
-  void xsensCallback(const hiros_skeleton_msgs::msg::StampedSkeleton& t_msg);
+                const std::string& topic_name);
 
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_{};
   std::unique_ptr<tf2_ros::TransformListener> tf_listener_{};
   std::unique_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_{};
 
-  rclcpp::Subscription<hiros_skeleton_msgs::msg::StampedSkeleton>::SharedPtr
-      kinect_skel_sub_{};
-  rclcpp::Subscription<hiros_skeleton_msgs::msg::StampedSkeleton>::SharedPtr
-      xsens_skel_sub_{};
+  std::vector<rclcpp::Subscription<
+      hiros_skeleton_msgs::msg::StampedSkeleton>::SharedPtr>
+      subs_{};
 
   Parameters params_{};
 
   std::unique_ptr<TfBuffer> buffer_ptr_{};
 
-  tf2::Stamped<tf2::Transform> kinect2root_tf_{{}, {}, {}};
-  tf2::Stamped<tf2::Transform> xsens2root_tf_{{}, {}, {}};
-  tf2::Stamped<tf2::Transform> xsens2kinect_tf_{{}, {}, {}};
+  // map<input_topic, transform>
+  std::map<std::string, tf2::Stamped<tf2::Transform>> root_tfs_map_{};
+  tf2::Stamped<tf2::Transform> transform_{{}, {}, {}};
 
-  hiros::skeletons::types::Skeleton kinect_skeleton_{};
-  hiros::skeletons::types::Skeleton xsens_skeleton_{};
+  // map<input_topic, skeleton>
+  std::map<std::string, hiros::skeletons::types::Skeleton> skeletons_map_{};
 };
 
 }  // namespace hdt

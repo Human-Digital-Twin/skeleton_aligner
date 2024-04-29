@@ -13,33 +13,9 @@
 // Internal dependencies
 #include "skeleton_aligner/utils.h"
 
-std::vector<int> hiros::hdt::utils::kinectMarkerIds(
-    const std::vector<MarkerPair>& t_marker_pairs) {
-  std::vector<int> ids{};
-  ids.reserve(t_marker_pairs.size());
-
-  for (const auto& marker_pair : t_marker_pairs) {
-    ids.push_back(marker_pair.kinect_id);
-  }
-
-  return ids;
-}
-
-std::vector<int> hiros::hdt::utils::xsensMarkerIds(
-    const std::vector<MarkerPair>& t_marker_pairs) {
-  std::vector<int> ids{};
-  ids.reserve(t_marker_pairs.size());
-
-  for (const auto& marker_pair : t_marker_pairs) {
-    ids.push_back(marker_pair.xsens_id);
-  }
-
-  return ids;
-}
-
 bool hiros::hdt::utils::skeletonContains(
     const hiros::skeletons::types::Skeleton& t_skel,
-    const std::vector<int>& t_marker_ids) {
+    const std::vector<long>& t_marker_ids) {
   for (const auto& mk_id : t_marker_ids) {
     if (!t_skel.hasMarker(mk_id)) {
       return false;
@@ -50,7 +26,7 @@ bool hiros::hdt::utils::skeletonContains(
 
 std::vector<hiros::skeletons::types::Point> hiros::hdt::utils::extractMarkers(
     const hiros::skeletons::types::Skeleton& t_skel,
-    const std::vector<int>& t_marker_ids) {
+    const std::vector<long>& t_marker_ids) {
   std::vector<hiros::skeletons::types::Point> res{};
 
   for (const auto& marker_id : t_marker_ids) {

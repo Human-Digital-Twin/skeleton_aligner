@@ -20,8 +20,7 @@ def generate_launch_description():
             output='screen',
             emulate_tty=True,
             parameters=[
-                {'kinect_input_topic': '/kinect/input/skeleton'},
-                {'xsens_input_topic': '/xsens/input/skeleton'},
+                {'input_topics': ['topic1/skeleton', 'topic2/skeleton']},
                 {'weight': 1.},
                 marker_ids_cfg,
             ]
