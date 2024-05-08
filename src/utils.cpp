@@ -13,11 +13,22 @@
 // Internal dependencies
 #include "skeleton_aligner/utils.h"
 
+bool hiros::hdt::utils::removeMarkerAtIndex(
+    hiros::hdt::utils::Topic2MarkerIdsMap& map, const unsigned& index) {
+  for (auto& [topic, ids] : map) {
+    if (index >= ids.size()) {
+      return false;
+    }
+    ids.erase(ids.begin() + index);
+  }
+  return true;
+}
+
 bool hiros::hdt::utils::skeletonContains(
     const hiros::skeletons::types::Skeleton& skel,
     const std::vector<long>& marker_ids) {
   for (const auto& mk_id : marker_ids) {
-    if (!skel.hasMarker(mk_id)) {
+    if (!skel.hasMarker(static_cast<int>(mk_id))) {
       return false;
     }
   }

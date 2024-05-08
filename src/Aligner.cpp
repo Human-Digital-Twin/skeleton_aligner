@@ -70,9 +70,21 @@ void hiros::hdt::Aligner::getMarkersConfig() {
   std::vector<long> ids{};
   for (auto i{0u}; i < input_sources.size(); ++i) {
     getParam("translation_ids." + input_sources.at(i), ids);
+    if (ids.size() < 1) {
+      RCLCPP_FATAL_STREAM(get_logger(),
+                          "At least 1 translation ID is required. Closing");
+      stop();
+      exit(EXIT_FAILURE);
+    }
     params_.marker_ids.translation[params_.input_topics.at(i)] = ids;
 
     getParam("rotation_ids." + input_sources.at(i), ids);
+    if (ids.size() < 3) {
+      RCLCPP_FATAL_STREAM(get_logger(),
+                          "At least 3 rotation IDs are required. Closing");
+      stop();
+      exit(EXIT_FAILURE);
+    }
     params_.marker_ids.rotation[params_.input_topics.at(i)] = ids;
   }
 }
@@ -110,9 +122,9 @@ void hiros::hdt::Aligner::updateTransform() {
 }
 
 void hiros::hdt::Aligner::computeTransform() {
-  computeRotation();
-  computeTranslation();
-  buffer_ptr_->push_back(transform_);
+  if (computeRotation() && computeTranslation()) {
+    buffer_ptr_->push_back(transform_);
+  }
 }
 
 void hiros::hdt::Aligner::publishTransform() {
@@ -139,23 +151,35 @@ void hiros::hdt::Aligner::clearSkeletons() {
   });
 }
 
-void hiros::hdt::Aligner::computeRotation() {
-  if (std::any_of(skeletons_map_.begin(), skeletons_map_.end(),
-                  [&](const auto& pair) {
-                    const auto& [topic, skeleton] = pair;
-                    return !utils::skeletonContains(
-                        skeleton, params_.marker_ids.rotation.at(topic));
-                  })) {
-    // Return if any skeleton is missing markers
-    return;
+hiros::hdt::utils::Topic2MarkerIdsMap
+hiros::hdt::Aligner::getAvailableMarkerIds(
+    utils::Topic2MarkerIdsMap ids) const {
+  for (const auto& topic : params_.input_topics) {
+    for (auto idx{static_cast<int>(ids.at(topic).size()) - 1}; idx >= 0;
+         --idx) {
+      if (!skeletons_map_.at(topic).hasMarker(
+              static_cast<int>(ids.at(topic).at(static_cast<unsigned>(idx))))) {
+        utils::removeMarkerAtIndex(ids, static_cast<unsigned>(idx));
+      }
+    }
+  }
+
+  return ids;
+}
+
+bool hiros::hdt::Aligner::computeRotation() {
+  auto available_ids{getAvailableMarkerIds(params_.marker_ids.rotation)};
+  if (available_ids.at(params_.input_topics.front()).size() < 3) {
+    // Return if skeletons do not have enough markers
+    return false;
   }
 
   std::map<std::string, Eigen::MatrixXd> points_map{};
   for (const auto& topic : params_.input_topics) {
-    points_map[topic] = {3, params_.marker_ids.rotation.at(topic).size()};
+    points_map[topic] = {3, available_ids.at(topic).size()};
 
     auto i{0u};
-    for (const auto& mk_id : params_.marker_ids.rotation.at(topic)) {
+    for (const auto& mk_id : available_ids.at(topic)) {
       const auto& point{skeletons_map_.at(topic)
                             .getMarker(static_cast<int>(mk_id))
                             .center.pose.position};
@@ -193,17 +217,15 @@ void hiros::hdt::Aligner::computeRotation() {
   // Set transform rotation
   transform_.setRotation(hiros::skeletons::utils::toStruct(
       tf2::toMsg(Eigen::Quaterniond(rotation))));
+
+  return true;
 }
 
-void hiros::hdt::Aligner::computeTranslation() {
-  if (std::any_of(skeletons_map_.cbegin(), skeletons_map_.cend(),
-                  [&](const auto& pair) {
-                    const auto& [topic, skeleton] = pair;
-                    return !utils::skeletonContains(
-                        skeleton, params_.marker_ids.rotation.at(topic));
-                  })) {
-    // Return if any skeleton is missing markers
-    return;
+bool hiros::hdt::Aligner::computeTranslation() {
+  auto available_ids{getAvailableMarkerIds(params_.marker_ids.translation)};
+  if (available_ids.at(params_.input_topics.front()).size() < 1) {
+    // Return if skeletons do not have enough markers
+    return false;
   }
 
   const auto& parent_topic{params_.input_topics.front()};
@@ -212,13 +234,13 @@ void hiros::hdt::Aligner::computeTranslation() {
   // T = [R t2-R*t1
   //      0       1]
   transform_.setOrigin(
-      utils::avg(utils::extractMarkers(
-          skeletons_map_.at(parent_topic),
-          params_.marker_ids.translation.at(parent_topic))) -
+      utils::avg(utils::extractMarkers(skeletons_map_.at(parent_topic),
+                                       available_ids.at(parent_topic))) -
       transform_.getBasis() *
-          utils::avg(utils::extractMarkers(
-              skeletons_map_.at(child_topic),
-              params_.marker_ids.translation.at(child_topic))));
+          utils::avg(utils::extractMarkers(skeletons_map_.at(child_topic),
+                                           available_ids.at(child_topic))));
+
+  return true;
 }
 
 void hiros::hdt::Aligner::getRootTransforms() {

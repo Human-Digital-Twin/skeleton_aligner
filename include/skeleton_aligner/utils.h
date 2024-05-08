@@ -14,11 +14,14 @@ namespace hiros {
 namespace hdt {
 namespace utils {
 
+using Topic2MarkerIdsMap = std::map<std::string, std::vector<long>>;
+
 struct MarkersMap {
-  // map<input_topic, vector<ID>>
-  std::map<std::string, std::vector<long>> translation{};
-  std::map<std::string, std::vector<long>> rotation{};
+  Topic2MarkerIdsMap translation{};
+  Topic2MarkerIdsMap rotation{};
 };
+
+bool removeMarkerAtIndex(Topic2MarkerIdsMap& map, const unsigned& index);
 
 bool skeletonContains(const hiros::skeletons::types::Skeleton& skel,
                       const std::vector<long>& marker_ids);

@@ -52,8 +52,10 @@ class Aligner : public rclcpp::Node {
   void publishTransform();
   void clearSkeletons();
 
-  void computeRotation();
-  void computeTranslation();
+  utils::Topic2MarkerIdsMap getAvailableMarkerIds(
+      utils::Topic2MarkerIdsMap ids) const;
+  bool computeRotation();
+  bool computeTranslation();
 
   void getRootTransforms();
   void getRootFrames();
