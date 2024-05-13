@@ -132,14 +132,14 @@ void hiros::hdt::Aligner::publishTransform() {
 
   geometry_msgs::msg::TransformStamped tf{};
 
-  const auto& parent_topic{root_tfs_map_.at(params_.input_topics.front())};
-  const auto& child_topic{root_tfs_map_.at(params_.input_topics.back())};
+  const auto& parent_tf{root_tfs_map_.at(params_.input_topics.front())};
+  const auto& child_tf{root_tfs_map_.at(params_.input_topics.back())};
 
   tf.header.stamp = now();
-  tf.header.frame_id = parent_topic.frame_id_;
-  tf.child_frame_id = child_topic.frame_id_;
+  tf.header.frame_id = parent_tf.frame_id_;
+  tf.child_frame_id = child_tf.frame_id_;
   tf.transform =
-      tf2::toMsg(parent_topic * buffer_ptr_->avg() * child_topic.inverse());
+      tf2::toMsg(parent_tf * buffer_ptr_->avg() * child_tf.inverse());
 
   static_tf_broadcaster_->sendTransform(tf);
 }
