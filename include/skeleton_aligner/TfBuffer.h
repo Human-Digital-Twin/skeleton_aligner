@@ -1,9 +1,9 @@
-#ifndef hiros_skeleton_aligner_TfBuffer_h
-#define hiros_skeleton_aligner_TfBuffer_h
+#ifndef skeleton_aligner_TfBuffer_h
+#define skeleton_aligner_TfBuffer_h
 
 // Standard dependencies
-#include <chrono>
-#include <deque>
+#include <cstddef>
+#include <vector>
 
 // ROS dependencies
 #include <tf2/LinearMath/Transform.h>
@@ -11,17 +11,18 @@
 // Internal dependencies
 #include "skeleton_aligner/TfCluster.h"
 
-namespace hiros {
-namespace hdt {
+namespace hdt::skeleton {
 
 class TfBuffer {
  public:
-  TfBuffer(const double& weight,
-           const double& time_threshold = k_default_time_threshold,
-           const double& clustering_threshold = k_default_clustering_threshold);
+  explicit TfBuffer(
+      const double& weight,
+      const double& time_threshold = k_default_time_threshold,
+      const double& clustering_threshold = k_default_clustering_threshold);
 
+  size_t n_clusters() const { return clusters_.size(); }
   size_t size() const {
-    return clusters_.empty() ? 0. : clusters_.front().size();
+    return clusters_.empty() ? 0 : clusters_.front().size();
   }
   bool empty() const { return clusters_.empty() || clusters_.front().empty(); }
   void push_back(const tf2::Transform& tf);
@@ -47,7 +48,6 @@ class TfBuffer {
   std::vector<TfCluster> clusters_{};
 };
 
-}  // namespace hdt
-}  // namespace hiros
+}  // namespace hdt::skeleton
 
 #endif

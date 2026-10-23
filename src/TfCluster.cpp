@@ -1,16 +1,20 @@
+// Standard dependencies
+#include <cmath>
+
 // Internal dependencies
 #include "skeleton_aligner/TfCluster.h"
-
 #include "skeleton_aligner/utils.h"
 
-hiros::hdt::TfCluster::TfCluster(const double& weight) : weight_{weight} {}
+namespace hdt::skeleton {
 
-hiros::hdt::TfCluster::TfCluster(const tf2::Transform& tf, const double& weight)
+TfCluster::TfCluster(const double& weight) : weight_{weight} {}
+
+TfCluster::TfCluster(const tf2::Transform& tf, const double& weight)
     : TfCluster(weight) {
   push_back(tf);
 }
 
-void hiros::hdt::TfCluster::push_back(const tf2::Transform& tf) {
+void TfCluster::push_back(const tf2::Transform& tf) {
   ++cluster_size_;
   last_tf_.stamp_ = std::chrono::system_clock::now();
   last_tf_.setData(tf);
@@ -19,7 +23,7 @@ void hiros::hdt::TfCluster::push_back(const tf2::Transform& tf) {
   cumulative_weight_ += std::pow(weight_, cluster_size_);
 }
 
-void hiros::hdt::TfCluster::computeAvg() {
+void TfCluster::computeAvg() {
   if (empty()) {
     return;
   }
@@ -31,3 +35,5 @@ void hiros::hdt::TfCluster::computeAvg() {
 
   avg_tf_ = utils::weightedAverage({avg_tf_, last_tf_}, cumulative_weight_);
 }
+
+}  // namespace hdt::skeleton

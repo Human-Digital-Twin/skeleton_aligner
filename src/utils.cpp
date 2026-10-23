@@ -1,20 +1,24 @@
 // Standard dependencies
+#include <algorithm>
+#include <iostream>
 #include <numeric>
+#include <stdexcept>
 
-// Eigen dependencies
-#include "eigen3/Eigen/Eigen"
+// External dependencies
+#include <Eigen/Dense>
 
 // ROS dependencies
 #include "tf2_eigen/tf2_eigen.hpp"
 
-// Custom external dependencies
+// Custom external packages dependencies
 #include "skeletons/utils.h"
 
 // Internal dependencies
 #include "skeleton_aligner/utils.h"
 
-bool hiros::hdt::utils::removeMarkerAtIndex(
-    hiros::hdt::utils::Topic2MarkerIdsMap& map, const unsigned& index) {
+namespace hdt::skeleton::utils {
+
+bool removeMarkerAtIndex(Topic2MarkerIdsMap& map, const unsigned& index) {
   for (auto& [topic, ids] : map) {
     if (index >= ids.size()) {
       return false;
@@ -24,9 +28,8 @@ bool hiros::hdt::utils::removeMarkerAtIndex(
   return true;
 }
 
-bool hiros::hdt::utils::skeletonContains(
-    const hiros::skeletons::types::Skeleton& skel,
-    const std::vector<long>& marker_ids) {
+bool skeletonContains(const hiros::skeletons::types::Skeleton& skel,
+                      const std::vector<long>& marker_ids) {
   for (const auto& mk_id : marker_ids) {
     if (!skel.hasMarker(static_cast<int>(mk_id))) {
       return false;
@@ -35,7 +38,7 @@ bool hiros::hdt::utils::skeletonContains(
   return true;
 }
 
-std::vector<hiros::skeletons::types::Point> hiros::hdt::utils::extractMarkers(
+std::vector<hiros::skeletons::types::Point> extractMarkers(
     const hiros::skeletons::types::Skeleton& skel,
     const std::vector<long>& marker_ids) {
   std::vector<hiros::skeletons::types::Point> res{};
@@ -49,20 +52,20 @@ std::vector<hiros::skeletons::types::Point> hiros::hdt::utils::extractMarkers(
   return res;
 }
 
-hiros::skeletons::types::Point hiros::hdt::utils::avg(
+hiros::skeletons::types::Point avg(
     const std::vector<hiros::skeletons::types::Point>& v) {
   return std::accumulate(v.begin(), v.end(),
                          hiros::skeletons::types::Point{0., 0., 0.}) /
          v.size();
 }
 
-bool hiros::hdt::utils::isNaN(const tf2::Transform& tf) {
+bool isNaN(const tf2::Transform& tf) {
   return hiros::skeletons::utils::isNaN(tf.getOrigin()) ||
          hiros::skeletons::utils::isNaN(tf.getRotation());
 }
 
-void hiros::hdt::utils::transform(hiros::skeletons::types::KinematicState& ks,
-                                  const tf2::Transform& tf) {
+void transform(hiros::skeletons::types::KinematicState& ks,
+               const tf2::Transform& tf) {
   if (isNaN(tf)) {
     throw std::runtime_error("NaN transform");
   }
@@ -75,20 +78,18 @@ void hiros::hdt::utils::transform(hiros::skeletons::types::KinematicState& ks,
   }
 }
 
-double hiros::hdt::utils::translationDistance(const tf2::Transform& tf1,
-                                              const tf2::Transform& tf2) {
+double translationDistance(const tf2::Transform& tf1,
+                           const tf2::Transform& tf2) {
   return tf1.getOrigin().distance(tf2.getOrigin());
 }
 
-double hiros::hdt::utils::rotationDistance(const tf2::Transform& tf1,
-                                           const tf2::Transform& tf2) {
+double rotationDistance(const tf2::Transform& tf1, const tf2::Transform& tf2) {
   return tf1.getRotation().angleShortestPath(tf2.getRotation());
 }
 
-double hiros::hdt::utils::normalizedDistance(
-    const tf2::Transform& tf1, const tf2::Transform& tf2,
-    const double& max_translation_distance,
-    const double& max_rotation_distance) {
+double normalizedDistance(const tf2::Transform& tf1, const tf2::Transform& tf2,
+                          const double& max_translation_distance,
+                          const double& max_rotation_distance) {
   auto normalized_translation_distance{std::min(
       std::max(0., translationDistance(tf1, tf2) / max_translation_distance),
       1.)};
@@ -99,31 +100,30 @@ double hiros::hdt::utils::normalizedDistance(
                   normalized_rotation_distance);
 }
 
-void hiros::hdt::utils::transform(
-    std::vector<hiros::skeletons::types::Marker>& mks,
-    const tf2::Transform& tf) {
+void transform(std::vector<hiros::skeletons::types::Marker>& mks,
+               const tf2::Transform& tf) {
   for (auto& mk : mks) {
     transform(mk.center, tf);
   }
 }
 
-void hiros::hdt::utils::transform(
-    std::vector<hiros::skeletons::types::Link>& lks, const tf2::Transform& tf) {
+void transform(std::vector<hiros::skeletons::types::Link>& lks,
+               const tf2::Transform& tf) {
   for (auto& lk : lks) {
     transform(lk.center, tf);
   }
 }
 
-void hiros::hdt::utils::transform(hiros::skeletons::types::Skeleton& skel,
-                                  const tf2::Transform& tf) {
+void transform(hiros::skeletons::types::Skeleton& skel,
+               const tf2::Transform& tf) {
   transform(skel.markers, tf);
   transform(skel.links, tf);
   skel.bounding_box = hiros::skeletons::utils::computeBoundingBox(skel);
 }
 
-tf2::Transform hiros::hdt::utils::solveWeightedLeastSquares(
-    const std::vector<tf2::Transform>& As,
-    const std::vector<tf2::Transform>& bs, const double& weight) {
+tf2::Transform solveWeightedLeastSquares(const std::vector<tf2::Transform>& As,
+                                         const std::vector<tf2::Transform>& bs,
+                                         const double& weight) {
   if (As.size() != bs.size() || As.empty()) {
     std::cerr << "Error: least squares dimension mismatch or empty vectors"
               << std::endl;
@@ -221,8 +221,7 @@ tf2::Transform hiros::hdt::utils::solveWeightedLeastSquares(
       sol_row(6), sol_row(7), sol_row(8), sol_row(9), sol_row(10), sol_row(11),
       0, 0, 0, 1;
 
-  // Orthogonalize resulting rotation matrix, from
-  // https://stackoverflow.com/questions/23080791/eigen-re-orthogonalization-of-rotation-matrix
+  // Orthogonalize resulting rotation matrix
   Eigen::JacobiSVD<Eigen::MatrixXd> svd{
       sol.block<3, 3>(0, 0), Eigen::ComputeThinU | Eigen::ComputeThinV};
   Eigen::Matrix3d sol_rot{svd.matrixU() * svd.matrixV().transpose()};
@@ -234,12 +233,14 @@ tf2::Transform hiros::hdt::utils::solveWeightedLeastSquares(
                         hiros::skeletons::utils::toStruct(tf2::toMsg(t))};
 }
 
-tf2::Transform hiros::hdt::utils::weightedAverage(
-    const std::vector<tf2::Transform>& tfs, const double& weight) {
+tf2::Transform weightedAverage(const std::vector<tf2::Transform>& tfs,
+                               const double& weight) {
   std::vector<tf2::Transform> identities{tfs.size()};
   tf2::Transform identity{};
   identity.setIdentity();
   std::fill(identities.begin(), identities.end(), identity);
 
-  return utils::solveWeightedLeastSquares(identities, tfs, weight);
+  return solveWeightedLeastSquares(identities, tfs, weight);
 }
+
+}  // namespace hdt::skeleton::utils

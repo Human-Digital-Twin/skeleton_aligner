@@ -1,8 +1,13 @@
-#ifndef hiros_skeleton_aligner_Aligner_h
-#define hiros_skeleton_aligner_Aligner_h
+#ifndef skeleton_aligner_Aligner_h
+#define skeleton_aligner_Aligner_h
+
+// Standard dependencies
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
 // ROS dependencies
-#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/LinearMath/Transform.h"
 #include "tf2_ros/buffer.h"
@@ -17,13 +22,17 @@
 #include "skeleton_aligner/TfBuffer.h"
 #include "skeleton_aligner/utils.h"
 
-namespace hiros {
-namespace hdt {
+namespace hdt::skeleton {
 
 class Aligner : public rclcpp::Node {
  public:
-  Aligner();
-  ~Aligner();
+  explicit Aligner(const rclcpp::NodeOptions& options = rclcpp::NodeOptions{});
+  ~Aligner() override;
+
+  Aligner(const Aligner&) = delete;
+  Aligner& operator=(const Aligner&) = delete;
+  Aligner(Aligner&&) = delete;
+  Aligner& operator=(Aligner&&) = delete;
 
  private:
   struct Parameters {
@@ -78,13 +87,12 @@ class Aligner : public rclcpp::Node {
 
   // map<input_topic, transform>
   std::map<std::string, tf2::Stamped<tf2::Transform>> root_tfs_map_{};
-  tf2::Stamped<tf2::Transform> transform_{{}, {}, {}};
+  tf2::Stamped<tf2::Transform> transform_{};
 
   // map<input_topic, skeleton>
   std::map<std::string, hiros::skeletons::types::Skeleton> skeletons_map_{};
 };
 
-}  // namespace hdt
-}  // namespace hiros
+}  // namespace hdt::skeleton
 
 #endif

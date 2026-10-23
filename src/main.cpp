@@ -2,7 +2,7 @@
 
 int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<hiros::hdt::Aligner>());
+  rclcpp::spin(std::make_shared<hdt::skeleton::Aligner>());
   rclcpp::shutdown();
-  exit(EXIT_SUCCESS);
+  return EXIT_SUCCESS;
 }

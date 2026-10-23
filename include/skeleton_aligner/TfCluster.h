@@ -1,21 +1,24 @@
-#ifndef hiros_skeleton_aligner_TfCluster_h
-#define hiros_skeleton_aligner_TfCluster_h
+#ifndef skeleton_aligner_TfCluster_h
+#define skeleton_aligner_TfCluster_h
+
+// Standard dependencies
+#include <chrono>
+#include <cstddef>
 
 // ROS dependencies
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/transform_datatypes.h>
 
-namespace hiros {
-namespace hdt {
+namespace hdt::skeleton {
 
 class TfCluster {
  public:
-  TfCluster(const double& weight = 1.);
+  explicit TfCluster(const double& weight = 1.);
   TfCluster(const tf2::Transform& tf, const double& weight = 1.);
 
   bool empty() const { return cluster_size_ == 0; }
   size_t size() const { return cluster_size_; }
-  void push_back(const tf2::Transform& t_tf);
+  void push_back(const tf2::Transform& tf);
 
   double age() const {
     return std::chrono::duration_cast<std::chrono::duration<double>>(
@@ -35,7 +38,6 @@ class TfCluster {
   tf2::Transform avg_tf_{};
 };
 
-}  // namespace hdt
-}  // namespace hiros
+}  // namespace hdt::skeleton
 
 #endif

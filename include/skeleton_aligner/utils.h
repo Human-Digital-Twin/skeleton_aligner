@@ -1,18 +1,19 @@
-#ifndef hiros_skeleton_aligner_utils_h
-#define hiros_skeleton_aligner_utils_h
+#ifndef skeleton_aligner_utils_h
+#define skeleton_aligner_utils_h
 
 // Standard dependencies
+#include <cmath>
 #include <map>
+#include <string>
+#include <vector>
 
 // ROS dependencies
 #include <tf2/LinearMath/Transform.h>
 
-// Custom external dependencies
+// Custom external packages dependencies
 #include "skeletons/types.h"
 
-namespace hiros {
-namespace hdt {
-namespace utils {
+namespace hdt::skeleton::utils {
 
 using Topic2MarkerIdsMap = std::map<std::string, std::vector<long>>;
 
@@ -33,13 +34,13 @@ std::vector<hiros::skeletons::types::Point> extractMarkers(
 hiros::skeletons::types::Point avg(
     const std::vector<hiros::skeletons::types::Point>& v);
 
-bool isNaN(const tf2::Transform& t_tf);
+bool isNaN(const tf2::Transform& tf);
 
 double translationDistance(const tf2::Transform& tf1,
                            const tf2::Transform& tf2);
 double rotationDistance(const tf2::Transform& tf1, const tf2::Transform& tf2);
 double normalizedDistance(
-    const tf2::Transform& t_tf1, const tf2::Transform& tf2,
+    const tf2::Transform& tf1, const tf2::Transform& tf2,
     const double& max_translation_distance = 2. /* [m] */,
     const double& max_rotation_distance = 2. * M_PI /* [rad] */);
 
@@ -58,8 +59,6 @@ tf2::Transform solveWeightedLeastSquares(const std::vector<tf2::Transform>& As,
 tf2::Transform weightedAverage(const std::vector<tf2::Transform>& tfs,
                                const double& weight = 1.);
 
-}  // namespace utils
-}  // namespace hdt
-}  // namespace hiros
+}  // namespace hdt::skeleton::utils
 
 #endif
