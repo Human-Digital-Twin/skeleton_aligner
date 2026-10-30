@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(skeleton_aligner)
+project(skeleton_aligner VERSION 1.0.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
