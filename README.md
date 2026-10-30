@@ -16,8 +16,8 @@ Align the body poses of a person expressed as [StampedSkeleton messages](https:/
 
 ## Usage
 
-```
-ros2 launch skeleton_aligner default.launch.py
+```bash
+ros2 launch skeleton_aligner default.launch.py topic1:="/hiros/kinect/skeleton" topic2:="/hiros/xsens/skeleton"
 ```
 
 ## Citation

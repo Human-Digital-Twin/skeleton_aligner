@@ -23,6 +23,18 @@ def generate_launch_description():
         description="Weight factor for cluster alignment.",
     )
 
+    topic1_arg = DeclareLaunchArgument(
+        "topic1",
+        default_value="/hiros/kinect/skeleton",
+        description="First input StampedSkeleton topic to align.",
+    )
+
+    topic2_arg = DeclareLaunchArgument(
+        "topic2",
+        default_value="/hiros/xsens/skeleton",
+        description="Second input StampedSkeleton topic to align.",
+    )
+
     skeleton_aligner_node = Node(
         package="skeleton_aligner",
         executable="skeleton_aligner",
@@ -31,7 +43,12 @@ def generate_launch_description():
         emulate_tty=True,
         parameters=[
             LaunchConfiguration("marker_config"),
-            {"input_topics": ["topic1/skeleton", "topic2/skeleton"]},
+            {
+                "input_topics": [
+                    LaunchConfiguration("topic1"),
+                    LaunchConfiguration("topic2"),
+                ]
+            },
             {"weight": LaunchConfiguration("weight")},
         ],
     )
@@ -40,6 +57,8 @@ def generate_launch_description():
         [
             marker_config_arg,
             weight_arg,
+            topic1_arg,
+            topic2_arg,
             skeleton_aligner_node,
         ]
     )
