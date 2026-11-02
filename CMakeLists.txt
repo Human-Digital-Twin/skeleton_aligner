@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(skeleton_aligner VERSION 1.0.0)
+project(skeleton_aligner VERSION 1.0.1)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -41,23 +41,31 @@ add_library(${PROJECT_NAME} SHARED
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${tf2_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${tf2_ros_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${tf2_eigen_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${tf2_geometry_msgs_INCLUDE_DIRS}>
     $<INSTALL_INTERFACE:include>
+)
+include_directories(
+  include
+  ${tf2_INCLUDE_DIRS}
+  ${tf2_ros_INCLUDE_DIRS}
+  ${tf2_eigen_INCLUDE_DIRS}
+  ${tf2_geometry_msgs_INCLUDE_DIRS}
 )
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-ament_target_dependencies(${PROJECT_NAME}
-  rclcpp
-  hiros_skeleton_msgs
-  tf2
-  tf2_eigen
-  tf2_geometry_msgs
-  tf2_ros
-)
-
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} PUBLIC
+  rclcpp::rclcpp
+  ${hiros_skeleton_msgs_TARGETS}
+  tf2::tf2
+  tf2_eigen::tf2_eigen
+  tf2_geometry_msgs::tf2_geometry_msgs
+  tf2_ros::tf2_ros
   Eigen3::Eigen
 )
 

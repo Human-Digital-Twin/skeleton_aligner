@@ -6,8 +6,8 @@
 #include <cstddef>
 
 // ROS dependencies
-#include <tf2/LinearMath/Transform.h>
-#include <tf2/transform_datatypes.h>
+#include <tf2/LinearMath/Transform.hpp>
+#include <tf2/transform_datatypes.hpp>
 
 namespace hdt::skeleton {
 

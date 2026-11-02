@@ -9,10 +9,10 @@
 
 // ROS dependencies
 #include "rclcpp/rclcpp.hpp"
-#include "tf2/LinearMath/Transform.h"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/static_transform_broadcaster.h"
-#include "tf2_ros/transform_listener.h"
+#include <tf2/LinearMath/Transform.hpp>
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/static_transform_broadcaster.hpp"
+#include "tf2_ros/transform_listener.hpp"
 
 // Custom external packages dependencies
 #include "hiros_skeleton_msgs/msg/stamped_skeleton.hpp"

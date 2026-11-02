@@ -6,7 +6,7 @@
 #include <vector>
 
 // ROS dependencies
-#include <tf2/LinearMath/Transform.h>
+#include <tf2/LinearMath/Transform.hpp>
 
 // Internal dependencies
 #include "skeleton_aligner/TfCluster.h"

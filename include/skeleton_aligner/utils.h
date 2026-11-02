@@ -8,7 +8,7 @@
 #include <vector>
 
 // ROS dependencies
-#include <tf2/LinearMath/Transform.h>
+#include <tf2/LinearMath/Transform.hpp>
 
 // Custom external packages dependencies
 #include "skeletons/types.h"
